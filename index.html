@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STOCK MASTER PRO - V11.11.5 (Full Audit Log)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        .stock-card { transition: all 0.2s ease; border: 1px solid #e2e8f0; position: relative; }
+        .stock-card:hover { border-color: #6366f1; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); }
+        .sync-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+        .out-of-stock-animate { animation: blink 1.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .hidden { display: none !important; }
+        .modal-overlay { z-index: 5000; backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body class="text-slate-900 pb-12">
+
+<div id="auth-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6">
+    <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl text-center">
+        <img src="Logologin.PNG" alt="Logo" class="h-20 mx-auto object-contain mb-4">
+        <p class="text-slate-400 text-xs font-bold uppercase mb-8 tracking-widest">ระบบบริหารคลังวัสดุ v11.11.5</p>
+        <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-8">
+            <button id="tab-login" onclick="AppStore.switchAuth('login')" class="flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600">เข้าสู่ระบบ</button>
+            <button id="tab-register" onclick="AppStore.switchAuth('register')" class="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400">ลงทะเบียน</button>
+        </div>
+        <div class="space-y-4 text-left">
+            <input type="text" id="auth-user" placeholder="ชื่อผู้ใช้งาน" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="password" id="auth-pass" placeholder="รหัสผ่าน" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+            <div id="org-selection-wrapper" style="display: none;">
+                <select id="orgName" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none appearance-none">
+                    <option value="" disabled selected>-- เลือกหน่วยงานสังกัด --</option>
+                    <option value="รพ.สต.ปะนาเระ">รพ.สต.ปะนาเระ</option>
+                    <option value="รพ.สต.บ้านท่าทราย">รพ.สต.บ้านท่าทราย</option>
+                    <option value="รพ.สต.บ้านนอก">รพ.สต.บ้านนอก</option>
+                    <option value="รพ.สต.ดอน">รพ.สต.ดอน</option>
+                    <option value="รพ.สต.ควน">รพ.สต.ควน</option>
+                    <option value="รพ.สต.ท่าน้ำ">รพ.สต.ท่าน้ำ</option>
+                    <option value="รพ.สต.บ้านสุเหร่า">รพ.สต.บ้านสุเหร่า</option>
+                    <option value="รพ.สต.คอกกระบือ">รพ.สต.คอกกระบือ</option>
+                    <option value="รพ.สต.พ่อมิ่ง">รพ.สต.พ่อมิ่ง</option>
+                    <option value="รพ.สต.บางมะรวด">รพ.สต.บางมะรวด</option>
+                    <option value="รพ.สต.ศาลาหยุดพระ">รพ.สต.ศาลาหยุดพระ</option>
+                    <option value="รพ.สต.บ้านน้ำบ่อ">รพ.สต.บ้านน้ำบ่อ</option>
+                    <option value="รพ.สต.บ้านเตราะหัก">รพ.สต.บ้านเตราะหัก</option>
+                    <option value="รพ.สต.บ้านกลาง">รพ.สต.บ้านกลาง</option>
+                </select>
+            </div>
+            <button onclick="AppStore.handleAuth()" id="auth-btn" class="w-full py-4 btn-primary text-white rounded-2xl font-black text-sm shadow-lg mt-4">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+</div>
+
+<div id="main-app" class="hidden">
+    <nav class="bg-white sticky top-0 z-50 border-b border-slate-200 shadow-sm px-6 h-16 flex items-center justify-between">
+        <img src="Logologin.PNG" alt="Logo" class="h-10 w-auto">
+        <div class="flex items-center gap-4">
+            <div class="text-right">
+                <p id="user-display" class="text-[11px] font-black text-slate-700 uppercase leading-none"></p>
+                <div class="flex items-center justify-end gap-1 mt-1">
+                    <span id="sync-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 sync-pulse"></span>
+                    <span class="text-[9px] font-bold text-slate-400">Online</span>
+                </div>
+            </div>
+            <button onclick="AppStore.logout()" class="p-1 bg-slate-50 rounded-l text-slate-500 hover:text-rose-500 transition-colors">Logout</button>
+        </div>
+    </nav>
+
+    <header class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div><h1 class="text-3xl font-black text-slate-900 tracking-tight">คลังวัสดุ</h1><p class="text-slate-400 text-sm font-medium">ระบบจัดการวัสดุ</p></div>
+            <div class="flex flex-wrap justify-center gap-2">
+                <button onclick="AppStore.triggerExport()" class="px-5 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-bold text-indigo-600 shadow-sm">📊 รายงานฉบับสมบูรณ์ (Excel)</button>
+                <button onclick="AppStore.openCategoryModal()" class="px-5 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm">⚙️ ตั้งค่า</button>
+                <button onclick="AppStore.openItemModal()" class="px-6 py-3 btn-primary text-white rounded-xl text-xs font-white shadow-lg">➕ เพิ่มวัสดุใหม่</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8 text-center">
+            <div onclick="AppStore.setStatFilter('all'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">ทั้งหมด</p>
+                <p id="stat-total" class="text-3xl font-black text-slate-800">0</p>
+            </div>
+            
+            <div onclick="AppStore.setStatFilter('out'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-rose-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-rose-500 uppercase mb-1">พัสดุหมด!</p>
+                <p id="stat-out" class="text-3xl font-black text-rose-600">0</p>
+            </div>
+            
+            <div onclick="AppStore.setStatFilter('low'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-amber-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-amber-500 uppercase mb-1">ใกล้หมด</p>
+                <p id="stat-low" class="text-3xl font-black text-amber-500">0</p>
+            </div>
+            
+            <div onclick="AppStore.setStatFilter('today-in'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-emerald-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-emerald-500 uppercase mb-1">รับวันนี้</p>
+                <p id="stat-in-today" class="text-3xl font-black text-emerald-500">0</p>
+            </div>
+            
+            <div onclick="AppStore.setStatFilter('today-out'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-indigo-500 uppercase mb-1">เบิกวันนี้</p>
+                <p id="stat-out-today" class="text-3xl font-black text-indigo-500">0</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 pb-12">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row gap-3 mb-6 shadow-sm">
+            <input type="text" id="searchInput" oninput="AppStore.render()" placeholder="🔍 ค้นหาชื่อพัสดุ..." class="w-full sm:flex-1 px-4 py-3 bg-slate-50 rounded-xl text-sm font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all">
+            <select id="filterCategory" onchange="AppStore.render()" class="w-full sm:w-48 p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none cursor-pointer focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+        
+        <div id="inventory-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+        <div id="empty-state" class="py-24 text-center border-2 border-dashed border-slate-200 rounded-[3rem] hidden bg-slate-50/50">📦 ไม่พบข้อมูล</div>
+
+        <div class="mt-12 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-2xl">📜</span>
+                <h3 class="text-lg font-black text-slate-800">ประวัติกิจกรรมล่าสุด (100 รายการล่าสุด)</h3>
+            </div>
+            
+            <div class="overflow-x-auto rounded-2xl border border-slate-100">
+                <table class="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-black uppercase text-slate-400">
+                            <th class="px-6 py-4">วัน-เวลา</th>
+                            <th class="px-6 py-4">รายการพัสดุ</th>
+                            <th class="px-6 py-4 text-center">กิจกรรม</th>
+                            <th class="px-6 py-4 text-right">จำนวน</th>
+                            <th class="px-6 py-4">ผู้ทำรายการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-list" class="divide-y divide-slate-100">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="itemModal" class="modal-overlay fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] p-10 w-full max-w-lg shadow-2xl">
+        <h3 id="modalTitle" class="text-2xl font-black mb-8 text-slate-800 uppercase">จัดการพัสดุ</h3><input type="hidden" id="editId">
+        <div class="space-y-4 text-left">
+            <div><label class="text-[10px] font-black text-slate-400 uppercase ml-1">ชื่อพัสดุ</label><input type="text" id="itemName" class="w-full p-4 bg-slate-50 border rounded-xl font-bold outline-none focus:border-indigo-400"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] font-black text-slate-400 uppercase ml-1">จำนวน</label><input type="number" id="itemQty" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></div>
+                <div><label class="text-[10px] font-black text-slate-400 uppercase ml-1">หน่วยนับ</label><input type="text" id="itemUnit" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] font-black text-slate-400 uppercase ml-1">หมวดหมู่</label><select id="itemCat" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></select></div>
+                <div><label class="text-[10px] font-black text-rose-400 uppercase ml-1">แจ้งเตือนขั้นต่ำ</label><input type="number" id="itemMin" value="5" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></div>
+            </div>
+        </div>
+        <div class="flex gap-4 mt-10"><button onclick="AppStore.closeModal('itemModal')" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600">ยกเลิก</button><button onclick="AppStore.saveItem()" class="flex-1 py-4 btn-primary text-white rounded-2xl font-black shadow-lg">บันทึกวัสดุ</button></div>
+    </div>
+</div>
+
+<div id="actionModal" class="modal-overlay fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
+        <p id="actionLabel" class="text-[10px] font-black text-slate-400 uppercase mb-2"></p>
+        <h3 id="actionItemName" class="text-2xl font-black text-slate-800 mb-6 truncate"></h3>
+        <input type="number" id="actionAmount" class="w-full p-6 bg-slate-50 border-2 rounded-3xl text-5xl font-black text-center text-indigo-600 outline-none mb-6" placeholder="0">
+        <div class="flex gap-3">
+            <button onclick="AppStore.closeModal('actionModal')" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600">ยกเลิก</button>
+            <button id="confirmActionBtn" onclick="AppStore.confirmAction()" class="flex-1 py-4 text-white rounded-2xl font-black shadow-lg uppercase text-xs tracking-widest"></button>
+        </div>
+    </div>
+</div>
+
+<div id="categoryModal" class="modal-overlay fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl">
+        <h3 class="text-2xl font-black mb-6 text-slate-800">ตั้งค่า & หมวดหมู่</h3>
+        <div class="mb-6 p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex gap-3">
+            <button onclick="AppStore.exportBackup()" class="flex-1 py-3 bg-white border text-indigo-600 rounded-xl text-[10px] font-black uppercase shadow-sm">💾 Backup</button>
+            <label class="flex-1 py-3 bg-white border text-indigo-600 rounded-xl text-[10px] font-black uppercase text-center cursor-pointer shadow-sm">📂 Import<input type="file" class="hidden" accept=".json" onchange="AppStore.importBackup(this)"></label>
+        </div>
+        <div class="space-y-4 text-left">
+            <div class="flex gap-2 mb-4"><input type="text" id="newCatInput" placeholder="หมวดหมู่ใหม่..." class="flex-1 p-4 bg-slate-50 border rounded-xl font-bold text-sm outline-none"><button onclick="AppStore.addCat()" class="px-5 py-4 btn-primary text-white rounded-xl font-bold text-xs uppercase shadow-md">เพิ่ม</button></div>
+            <div id="cat-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+        </div>
+        <button onclick="AppStore.closeModal('categoryModal')" class="w-full mt-8 py-4 bg-slate-100 rounded-2xl font-black text-slate-400 uppercase text-xs">ปิด</button>
+    </div>
+</div>
+
+<div id="confirmDeleteModal" class="modal-overlay fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl border-b-8 border-rose-500">
+        <div class="text-5xl mb-4">🗑️</div>
+        <h3 class="text-xl font-black text-slate-800 mb-2">ยืนยันการลบ?</h3>
+        <p class="text-slate-500 text-sm mb-6 text-center">คุณต้องการลบพัสดุ <br><span id="deleteItemName" class="font-black text-rose-600 underline text-lg"></span><br> ใช่หรือไม่?</p>
+        <div class="space-y-3">
+            <button onclick="AppStore.executeDelete()" class="w-full py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg hover:bg-rose-600 transition-all">ยืนยัน ลบทิ้ง</button>
+            <button onclick="AppStore.closeModal('confirmDeleteModal')" class="w-full py-3 text-slate-400 font-bold hover:text-slate-600">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAd7xCHaKXUBtam9I3bDDd3JSKk0EOxsho",
+        authDomain: "mystockapp-ab21b.firebaseapp.com",
+        projectId: "mystockapp-ab21b",
+        storageBucket: "mystockapp-ab21b.firebasestorage.app",
+        messagingSenderId: "1063086099094",
+        appId: "1:1063086099094:web:4047b82b9ee0166febd0b7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = 'stock-v11-9-9';
+    const userRegistryRef = doc(db, 'artifacts', appId, 'auth', 'userRegistry');
+
+    let state = { 
+        inventory: [], 
+        categories: ["ทั่วไป"], 
+        history: [], 
+        currentUser: null, 
+        currentOrg: null, 
+        authMode: 'login', 
+        deleteTarget: null,
+        currentStatFilter: 'all'
+    };
+    let activeDocRef = null;
+
+    const store = (() => {
+        async function init() {
+            const session = localStorage.getItem('STK_SESS_V11_7');
+            const sessionOrg = localStorage.getItem('STK_ORG_V11_7');
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) await signInAnonymously(auth);
+                else if (session && sessionOrg) startApp(session, sessionOrg);
+                else document.getElementById('auth-screen').classList.remove('hidden');
+            });
+        }
+
+        function startApp(username, org) {
+            state.currentUser = username; state.currentOrg = org;
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('user-display').innerText = `${username} (${org})`;
+            activeDocRef = doc(db, 'artifacts', appId, 'organizations', org, 'state', 'main');
+            onSnapshot(activeDocRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    state.inventory = data.inventory || [];
+                    state.categories = data.categories || ["ทั่วไป"];
+                    state.history = data.history || [];
+                    updateUI(); setSyncStatus('online');
+                } else persist();
+            });
+        }
+
+        async function persist() {
+            if (!activeDocRef) return;
+            await setDoc(activeDocRef, { inventory: state.inventory, categories: state.categories, history: state.history, orgName: state.currentOrg }, { merge: true });
+        }
+
+        function updateUI() {
+           updateStats();
+           renderInventory();
+           renderHistory();
+           renderCats();
+        }
+
+        function updateStats() {
+            const today = new Date().toDateString();
+            const histToday = state.history.filter(h => new Date(h.timestamp).toDateString() === today);
+            
+            const totalItems = state.inventory.length;
+            const outOfStockItems = state.inventory.filter(i => parseInt(i.stock) <= 0).length;
+            const lowStockItems = state.inventory.filter(i => parseInt(i.stock) > 0 && parseInt(i.stock) <= (parseInt(i.min) || 5)).length;
+            
+            const inTodayCount = histToday.filter(h => h.type === 'in').length;
+            const outTodayCount = histToday.filter(h => h.type === 'out').length;
+
+            if (document.getElementById('stat-total')) document.getElementById('stat-total').innerText = totalItems;
+            if (document.getElementById('stat-out')) document.getElementById('stat-out').innerText = outOfStockItems;
+            if (document.getElementById('stat-low')) document.getElementById('stat-low').innerText = lowStockItems;
+            if (document.getElementById('stat-in-today')) document.getElementById('stat-in-today').innerText = inTodayCount;
+            if (document.getElementById('stat-out-today')) document.getElementById('stat-out-today').innerText = outTodayCount;
+        }
+
+        function renderInventory() {
+            const list = document.getElementById('inventory-list');
+            const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const catF = document.getElementById('filterCategory')?.value || 'all';
+            const today = new Date().toDateString();
+
+            const filtered = state.inventory.filter(i => {
+                const sMatch = i.name.toLowerCase().includes(search);
+                const cMatch = (catF === 'all' || i.category === catF);
+                
+                let statMatch = true;
+                if (state.currentStatFilter === 'out') statMatch = i.stock <= 0;
+                if (state.currentStatFilter === 'low') statMatch = i.stock > 0 && i.stock <= (i.min || 5);
+                if (state.currentStatFilter === 'today-in') {
+                    statMatch = state.history.some(h => new Date(h.timestamp).toDateString() === today && h.type === 'in' && h.item.toLowerCase() === i.name.toLowerCase());
+                }
+                if (state.currentStatFilter === 'today-out') {
+                    statMatch = state.history.some(h => new Date(h.timestamp).toDateString() === today && h.type === 'out' && h.item.toLowerCase() === i.name.toLowerCase());
+                }
+
+                return sMatch && cMatch && statMatch;
+            });
+
+            if (filtered.length === 0) { 
+                list.innerHTML = ''; 
+                document.getElementById('empty-state').classList.remove('hidden'); 
+                return; 
+            }
+            document.getElementById('empty-state').classList.add('hidden');
+            
+            list.innerHTML = filtered.map(item => `
+                <div class="stock-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[9px] font-black uppercase px-2 py-1 bg-indigo-50 text-indigo-500 rounded-lg">${item.category}</span>
+                        <div class="flex gap-1">
+                            <button onclick="AppStore.editItem('${item.id}')" class="p-1.5 text-slate-300 hover:text-indigo-500">✏️</button>
+                            <button onclick="AppStore.requestDelete('${item.id}')" class="p-1.5 text-slate-300 hover:text-rose-500">🗑️</button>
+                        </div>
+                    </div>
+                    <h4 class="font-bold text-slate-800 my-4 truncate">${item.name}</h4>
+                    <div class="${item.stock <= 0 ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-100'} p-4 rounded-xl border mb-4 text-center">
+                        <span class="text-3xl font-black ${item.stock <= 0 ? 'text-rose-600' : (item.stock <= (item.min || 5) ? 'text-amber-500' : 'text-slate-800')}">${item.stock}</span>
+                        <span class="text-xs font-bold text-slate-400">${item.unit}</span>
+                        ${item.stock <= 0 ? '<p class="text-[9px] font-black text-rose-500 uppercase mt-1 out-of-stock-animate">⚠️ พัสดุหมด</p>' : ''}
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="AppStore.openAction('${item.id}', 'out')" class="py-2 bg-rose-500 text-white rounded-lg text-[10px] font-black uppercase shadow-md">เบิกออก</button>
+                        <button onclick="AppStore.openAction('${item.id}', 'in')" class="py-2 bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase shadow-md">รับเข้า</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        // 🟢 [เวอร์ชันแยกห้องสำเร็จเสร็จสิ้น V11.11.25] อ่านคีย์ประวัติแบบใหม่ ไม่ซ้ำซ้อน ไม่สลับแน่นอน
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            if (!list) return;
+
+            if (!state.history || state.history.length === 0) {
+                list.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-xs font-bold text-slate-400 bg-slate-50">ยังไม่มีประวัติกิจกรรมในระบบ</td></tr>`;
+                return;
+            }
+
+            const sortedHistory = [...state.history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            const recentHistory = sortedHistory.slice(0, 100);
+
+            list.innerHTML = recentHistory.map(h => {
+                const dateObj = new Date(h.timestamp);
+                const timeStr = dateObj.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                
+                const type = (h.type || '').toLowerCase();
+                const nameDisplay = h.item || h.details || h.category || h.cat || h.name || 'ไม่มีชื่อรายการ';
+                const itemText = nameDisplay.toLowerCase();
+                
+                let typeBadge = '';
+
+                // เช็กแยกฝั่งกิจกรรมของหมวดหมู่และพัสดุผ่านคีย์ล็อกอย่างแม่นยำ
+                if (type === 'add_category' || itemText.includes('เพิ่มหมวดหมู่:')) {
+                    typeBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-purple-50 text-purple-600 border border-purple-100">📁 เพิ่มหมวดหมู่</span>`;
+                } else if (type === 'delete_category' || itemText.includes('ลบหมวดหมู่:')) {
+                    typeBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-purple-100 text-purple-700 border border-purple-200">📁 ลบหมวดหมู่</span>`;
+                } else if (type === 'out') {
+                    typeBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-rose-50 text-rose-600 border border-rose-100">🔴 เบิกออก</span>`;
+                } else if (type === 'in') {
+                    typeBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-100">🟢 รับเข้า</span>`;
+                } else if (type.includes('add') || type.includes('create')) {
+                    typeBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-indigo-50 text-indigo-600 border border-indigo-100">🔵 เพิ่มวัสดุใหม่</span>`;
+                } else if (type === 'edit' || type.includes('update')) {
+                    typeBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-amber-50 text-amber-600 border border-amber-100">🟡 แก้ไขวัสดุ</span>`;
+                } else if (type.includes('delete') || type.includes('remove')) {
+                    typeBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-red-100 text-red-700 border border-red-200">💀 ลบวัสดุ</span>`;
+                } else {
+                    typeBadge = `<span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-slate-100 text-slate-600 border border-slate-200">${h.type || 'กิจกรรม'}</span>`;
+                }
+
+                let qtyDisplay = `<span class="text-slate-300 font-normal">-</span>`;
+                if (type === 'out' || type === 'in') {
+                    const rawQty = h.qty ?? h.amount ?? h.count ?? h.quantity ?? 0;
+                    const finalQty = parseInt(rawQty) || 0;
+                    qtyDisplay = `<span class="${type === 'out' ? 'text-rose-600' : 'text-emerald-600'}">${type === 'out' ? '-' : '+'}${finalQty}</span>`;
+                }
+
+                return `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors text-xs font-bold text-slate-700">
+                        <td class="px-6 py-4 text-slate-400 font-medium">${timeStr}</td>
+                        <td class="px-6 py-4 text-sm text-slate-900 font-black truncate max-w-[250px]">${nameDisplay}</td>
+                        <td class="px-6 py-4 text-center">${typeBadge}</td>
+                        <td class="px-6 py-4 text-right text-sm font-black">${qtyDisplay}</td>
+                        <td class="px-6 py-4 text-slate-500 font-medium">${h.user || 'เจ้าหน้าที่'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderCats() {
+            const filter = document.getElementById('filterCategory');
+            const input = document.getElementById('itemCat');
+            const list = document.getElementById('cat-list');
+            if(!filter || !input || !list) return;
+            const opt = state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            filter.innerHTML = `<option value="all">ทุกหมวดหมู่</option>` + opt;
+            input.innerHTML = opt;
+            list.innerHTML = state.categories.map(c => `<div class="flex justify-between items-center p-2 bg-slate-50 rounded-lg text-xs font-bold mb-1"><span>${c}</span><button onclick="AppStore.deleteCat('${c}')" class="text-rose-300 hover:text-rose-600 transition-all">✕</button></div>`).join('');
+        }
+
+        function setSyncStatus(s) {
+            const dot = document.getElementById('sync-dot');
+            if(dot) dot.className = s === 'online' ? "w-1.5 h-1.5 rounded-full bg-emerald-500 sync-pulse" : "w-1.5 h-1.5 rounded-full bg-rose-500";
+        }
+
+        return {
+            init, render: renderInventory, logout: () => { localStorage.clear(); location.reload(); },
+            switchAuth: (m) => {
+                state.authMode = m; const isLogin = m === 'login';
+                document.getElementById('auth-btn').innerText = isLogin ? 'เข้าสู่ระบบ' : 'ยืนยันลงทะเบียน';
+                document.getElementById('tab-login').className = isLogin ? 'flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600' : 'flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400';
+                document.getElementById('tab-register').className = !isLogin ? 'flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600' : 'flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400';
+                document.getElementById('org-selection-wrapper').style.display = isLogin ? 'none' : 'block';
+            },
+            handleAuth: async () =>  {
+                const u = document.getElementById('auth-user').value.trim(); 
+                const p = document.getElementById('auth-pass').value;
+                const org = document.getElementById('orgName')?.value;
+
+                if(!u || !p) return alert("❌ กรุณากรอกทั้งชื่อผู้ใช้และรหัสผ่าน");
+
+                const snap = await getDoc(userRegistryRef); 
+                const dbUsers = snap.exists() ? (snap.data().users || []) : [];
+
+                if(state.authMode === 'register') {
+                    if(!org) return alert("❌ กรุณาเลือกหน่วยงานสังกัดก่อนลงทะเบียน!");
+                    const exists = dbUsers.find(x => x.u === u);
+                    if(exists) return alert("❌ ชื่อผู้ใช้งานนี้ถูกใช้ไปแล้ว กรุณาใช้ชื่ออื่น");
+
+                    dbUsers.push({ u, p, org }); 
+                    await setDoc(userRegistryRef, { users: dbUsers }, { merge: true });
+                    
+                    alert(`✅ ลงทะเบียนสำเร็จสำหรับ ${org}!\nคุณสามารถเข้าสู่ระบบได้ทันที`); 
+                    store.switchAuth('login');
+                } else {
+                    const found = dbUsers.find(x => x.u === u && x.p === p); 
+                    if(!found) return alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+
+                    localStorage.setItem('STK_SESS_V11_7', u); 
+                    localStorage.setItem('STK_ORG_V11_7', found.org); 
+                    startApp(u, found.org);
+                }
+            },
+            saveItem: async () => {
+                const id = document.getElementById('editId').value; const name = document.getElementById('itemName').value.trim(); const qty = parseInt(document.getElementById('itemQty').value) || 0; const unit = document.getElementById('itemUnit').value.trim() || 'ชิ้น'; const cat = document.getElementById('itemCat').value; const min = parseInt(document.getElementById('itemMin').value) || 5;
+                if(!name) return;
+                const existing = state.inventory.find(x => x.name.toLowerCase() === name.toLowerCase());
+                if (id) {
+                    const idx = state.inventory.findIndex(x => x.id === id);
+                    state.inventory[idx] = { ...state.inventory[idx], name, stock: qty, unit, category: cat, min };
+                    // 🟡 แก้ไขพัสดุ: ใช้คีย์ 'edit' เหมือนเดิมเพื่อความปลอดภัยของโครงสร้างไอเทม
+                    state.history.unshift({ item: name, type: 'edit', action_text: 'แก้ไขวัสดุ', user: state.currentUser, timestamp: new Date().toISOString() });
+                } else if (existing) {
+                    existing.stock += qty;
+                    state.history.unshift({ item: name, type: 'in', amount: qty, user: state.currentUser, timestamp: new Date().toISOString(), action_text: 'บวกยอดสะสม' });
+                    alert(`📥 พบชื่อวัสดุซ้ำ! บวกยอดเดิมให้เรียบร้อยแล้ว`);
+                } else {
+                    state.inventory.push({ id: 'ITM-'+Date.now(), name, stock: qty, unit, category: cat, min });
+                    state.history.unshift({ item: name, type: 'create', amount: qty, user: state.currentUser, timestamp: new Date().toISOString(), action_text: 'เพิ่มใหม่' });
+                }
+                await persist(); document.getElementById('itemModal').classList.add('hidden');
+            },
+            openAction: (id, type) => {
+                const item = state.inventory.find(x => x.id === id); document.getElementById('actionItemName').innerText = item.name;
+                document.getElementById('actionLabel').innerText = type === 'in' ? 'รับเข้าวัสดุ' : 'เบิกออกวัสดุ';
+                const btn = document.getElementById('confirmActionBtn');
+                btn.innerText = type === 'in' ? 'ยืนยันรับเข้า' : 'ยืนยันเบิกออก';
+                btn.className = type === 'in' ? 'flex-1 py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg' : 'flex-1 py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg';
+                window.activeAction = { id, type }; document.getElementById('actionModal').classList.remove('hidden');
+            },
+            confirmAction: async () => {
+                const amt = parseInt(document.getElementById('actionAmount').value) || 0; const { id, type } = window.activeAction;
+                const idx = state.inventory.findIndex(x => x.id === id);
+                if (type === 'out' && state.inventory[idx].stock < amt) return alert("❌ ยอดคงเหลือไม่พอเบิก!");
+                state.inventory[idx].stock += (type === 'in' ? amt : -amt);
+                state.history.unshift({ item: state.inventory[idx].name, type, amount: amt, user: state.currentUser, timestamp: new Date().toISOString(), action_text: (type==='in'?'รับเข้า':'เบิกออก') });
+                await persist(); document.getElementById('actionModal').classList.add('hidden');
+            },
+            editItem: (id) => {
+                const item = state.inventory.find(x => x.id === id);
+                document.getElementById('editId').value = item.id; document.getElementById('itemName').value = item.name;
+                document.getElementById('itemQty').value = item.stock; document.getElementById('itemUnit').value = item.unit;
+                document.getElementById('itemCat').value = item.category; document.getElementById('itemMin').value = item.min || 5;
+                document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูลวัสดุ'; document.getElementById('itemModal').classList.remove('hidden');
+            },
+            requestDelete: (id) => {
+                state.deleteTarget = id; const item = state.inventory.find(x => x.id === id);
+                document.getElementById('deleteItemName').innerText = item.name;
+                document.getElementById('confirmDeleteModal').classList.remove('hidden');
+            },
+            executeDelete: async () => {
+                const item = state.inventory.find(x => x.id === state.deleteTarget);
+                state.history.unshift({ item: item.name, type: 'delete', action_text: 'ลบพัสดุ', user: state.currentUser, timestamp: new Date().toISOString() });
+                state.inventory = state.inventory.filter(x => x.id !== state.deleteTarget);
+                await persist(); document.getElementById('confirmDeleteModal').classList.add('hidden');
+            },
+            triggerExport: () => {
+                let csv = "\ufeff=== รายงานสถานะคลังวัสดุ ===\nหมวดหมู่,ชื่อพัสดุ,จำนวนคงเหลือ,หน่วยนับ,สถานะ\n";
+                state.inventory.forEach(i => csv += `"${i.category}","${i.name}",${i.stock},"${i.unit}","${i.stock<=0?'หมด':(i.stock<=i.min?'ใกล้หมด':'ปกติ')}"\n`);
+                csv += "\n\n=== ประวัติกิจกรรม   ===\nวันที่/เวลา,ผู้ทำรายการ,รายการวัสดุ,กิจกรรม,จำนวน\n";
+                state.history.forEach(h => {
+                    const dFull = new Date(h.timestamp).toLocaleString('th-TH');
+                    csv += `"${dFull}","${h.user}","${h.item}","${h.action_text || h.type}",${h.amount || '-'}\n`;
+                });
+                const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `รายงานละเอียด_${state.currentOrg}_${new Date().toLocaleDateString('th-TH')}.csv`; a.click();
+            },
+            setStatFilter: (filterType) => {
+                state.currentStatFilter = filterType;
+                renderInventory(); 
+            },
+            addCat: async () => {
+                const v = document.getElementById('newCatInput').value.trim();
+                if(v && !state.categories.includes(v)) { 
+                    state.categories.push(v); 
+                    // 📁เปลี่ยนมาใช้คีย์ 'add_category' และเติมคำว่า "เพิ่มหมวดหมู่:" นำหน้าเพื่อล็อกเป้าชัดเจน
+                    state.history.unshift({ item: 'เพิ่มหมวดหมู่: ' + v, type: 'add_category', action_text: 'เพิ่มหมวดหมู่', user: state.currentUser, timestamp: new Date().toISOString() });
+                    await persist(); document.getElementById('newCatInput').value = ''; 
+                }
+            },
+            deleteCat: async (c) => { 
+                if(state.categories.length > 1) { 
+                    state.categories = state.categories.filter(x => x !== c); 
+                    // 📁เปลี่ยนมาใช้คีย์ 'delete_category' และเติมคำว่า "ลบหมวดหมู่:" นำหน้า
+                    state.history.unshift({ item: 'ลบหมวดหมู่: ' + c, type: 'delete_category', action_text: 'ลบหมวดหมู่', user: state.currentUser, timestamp: new Date().toISOString() });
+                    await persist(); 
+                } 
+            },
+            exportBackup: () => { const b = new Blob([JSON.stringify(state)]); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `BACKUP_${state.currentOrg}.json`; a.click(); },
+            importBackup: (input) => { const r = new FileReader(); r.onload = async (e) => { const d = JSON.parse(e.target.result); state.inventory = d.inventory; state.categories = d.categories; state.history = d.history || []; await persist(); alert("กู้คืนสำเร็จ!"); }; r.readAsText(input.files[0]); },
+            openItemModal: () => { document.getElementById('editId').value = ''; document.getElementById('itemName').value = ''; document.getElementById('itemQty').value = '0'; document.getElementById('modalTitle').innerText = 'เพิ่มวัสดุใหม่'; document.getElementById('itemModal').classList.remove('hidden'); },
+            openCategoryModal: () => document.getElementById('categoryModal').classList.remove('hidden'),
+            closeModal: (id) => document.getElementById(id).classList.add('hidden')
+        };
+    })();
+
+    window.AppStore = store; window.onload = () => store.init();
+</script>
+</body>
+</html>
