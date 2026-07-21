@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <link rel="manifest" href="manifest.json">
+    <link class="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -92,14 +92,36 @@
     <header class="max-w-7xl mx-auto px-6 py-8">
         <div class="flex flex-col md:flex-row justify-between items-center gap-6">
             <div><h1 class="text-3xl font-black text-slate-900 tracking-tight">คลังวัสดุ</h1><p class="text-slate-400 text-sm font-medium">ระบบจัดการวัสดุ</p></div>
-            <div class="flex flex-wrap justify-center gap-2">
-                <button onclick="AppStore.triggerExport()" class="px-5 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs font-bold text-indigo-600 shadow-sm">📊รายงาน(Excel)</button>
-                <button onclick="AppStore.openCategoryModal()" class="px-5 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm">⚙️เพิ่มหมวดหมู่&Backup</button>
-                <button onclick="AppStore.openItemModal()" class="px-6 py-3 btn-primary text-white rounded-xl text-xs font-white shadow-lg">➕ เพิ่มวัสดุใหม่</button>
+            <div class="flex flex-wrap justify-center items-center gap-2">
+                <button onclick="AppStore.triggerExport()" class="px-4 py-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-700 shadow-sm flex items-center gap-1.5 transition-all">
+                    <span>📥 รายงาน (Excel)</span>
+                </button>
+
+                <button onclick="AppStore.openCategoryModal()" class="px-4 py-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 shadow-sm flex items-center gap-1.5 transition-all">
+                    <span>⚙️ หมวดหมู่ & Backup</span>
+                </button>
+
+                <button onclick="AppStore.openItemModal()" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-lg flex items-center gap-1.5 transition-all hover:scale-[1.02]">
+                    <span>➕ เพิ่มวัสดุใหม่</span>
+                </button>
             </div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8 text-center">
+
+            <div onclick="document.getElementById('valuationModal').classList.remove('hidden')" 
+             class="bg-gradient-to-br from-slate-800 via-slate-950 to-indigo-950 text-white p-4 rounded-2xl shadow-xl border border-slate-700/60 text-left cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xl group relative overflow-hidden">
+              <div class="absolute inset-0 bg-white/[0.03] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div>
+                <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                  <span>มูลค่ารวมวัสดุคงคลัง</span></p>
+                <p class="text-2xl font-black text-yellow-400 mt-1" id="statGrandValue">0.00 บาท</p>
+              </div>
+                <p class="text-slate-500 text-[9px] mt-2.5 group-hover:text-slate-400 transition-colors">
+                  <span>💡 คลิกที่กล่องนี้เพื่อดูสรุปยอดเงินแยกตามหมวดหมู่</span></p>
+            </div>
+
             <div onclick="AppStore.setStatFilter('all'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
                 <p class="text-[10px] font-black text-slate-400 uppercase mb-1">ทั้งหมด</p>
                 <p id="stat-total" class="text-3xl font-black text-slate-800">0</p>
@@ -135,7 +157,7 @@
                 <option value="all">ทุกหมวดหมู่</option>
             </select>
         </div>
-        
+          
         <div id="inventory-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
         <div id="empty-state" class="py-24 text-center border-2 border-dashed border-slate-200 rounded-[3rem] hidden bg-slate-50/50">📦 ไม่พบข้อมูล</div>
 
@@ -144,7 +166,7 @@
                 <span class="text-2xl">📜</span>
                 <h3 class="text-lg font-black text-slate-800">ประวัติกิจกรรมล่าสุด (100 รายการล่าสุด)</h3>
             </div>
-            
+
             <div class="overflow-x-auto rounded-2xl border border-slate-100">
                 <table class="w-full text-left border-collapse min-w-[600px]">
                     <thead>
@@ -154,6 +176,8 @@
                             <th class="px-6 py-4 text-center">กิจกรรม</th>
                             <th class="px-6 py-4 text-right">จำนวน</th>
                             <th class="px-6 py-4">ผู้ทำรายการ</th>
+                            <th class="px-4 py-3 text-right">ราคาต่อหน่วย</th>
+                            <th class="px-4 py-3 text-right">ราคารวม</th>
                             <th class="px-6 py-4">หมายเหตุ</th> 
                         </tr>
                     </thead>
@@ -176,6 +200,10 @@
             <div class="grid grid-cols-2 gap-4">
                 <div><label class="text-[10px] font-black text-slate-400 uppercase ml-1">หมวดหมู่</label><select id="itemCat" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></select></div>
                 <div><label class="text-[10px] font-black text-rose-400 uppercase ml-1">แจ้งเตือนขั้นต่ำ</label><input type="number" id="itemMin" value="5" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></div>
+            </div>
+            <div>
+                 <label class="block text-sm font-semibold text-slate-700 mb-1">ราคาต่อหน่วย (บาท)</label>
+                 <input type="number" id="itemPrice" step="0.01" min="0" value="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
             <div>
                 <label class="text-[10px] font-black text-slate-400 uppercase ml-1">หมายเหตุการจัดการพัสดุ</label>
@@ -232,6 +260,20 @@
     </div>
 </div>
 
+<div id="valuationModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-5 w-full max-w-4xl mx-4 max-h-[85vh] flex flex-col">
+        <div class="flex justify-between items-center border-b pb-3 mb-4 shrink-0">
+            <h3 class="font-black text-slate-800 text-sm flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                <span>📊 สรุปมูลค่าวัสดุคงเหลือแยกตามหมวดหมู่</span>
+            </h3>
+            <button onclick="document.getElementById('valuationModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 font-bold text-sm bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors">✕ ปิด</button>
+        </div>
+        <div class="overflow-y-auto pb-2">
+            <div id="categorySummaryContainer"></div>
+        </div>
+    </div>
+</div>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -280,7 +322,6 @@
 
             const savedUser = localStorage.getItem('currentUser');
             const savedOrg = localStorage.getItem('currentOrg');
-            const savedUid = localStorage.getItem('userUid');
 
             onAuthStateChanged(auth, async (user) => {
                 if (user && savedUser && savedOrg) {
@@ -375,14 +416,42 @@
                 return sMatch && cMatch && statMatch;
             });
 
+            let grandTotalVal = 0;
+            const categoryValuations = {};
+            if (state.categories) {
+                state.categories.forEach(c => categoryValuations[c] = 0);
+            }
+
             if (filtered.length === 0) { 
                 list.innerHTML = ''; 
                 document.getElementById('empty-state').classList.remove('hidden'); 
+                
+                const statGrandEl = document.getElementById('statGrandValue');
+                if (statGrandEl) statGrandEl.innerText = '0.00 บาท';
+                
+                // 🎨 ปรับตอนไม่มีข้อมูล ให้ขึ้นเป็นกล่องแจ้งเตือนสีนวล ๆ ดีไซน์เข้าชุดกันครับ
+                const catContainer = document.getElementById('categorySummaryContainer');
+                if (catContainer) {
+                    catContainer.innerHTML = `
+                        <div class="col-span-full bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                            <span class="text-xs font-bold text-slate-400">🔍 ไม่พบข้อมูลมูลค่าคงเหลือในหมวดหมู่นี้</span>
+                        </div>`;
+                }
                 return; 
             }
             document.getElementById('empty-state').classList.add('hidden');
             
-            list.innerHTML = filtered.map(item => `
+            list.innerHTML = filtered.map(item => {
+                const price = parseFloat(item.price) || 0;
+                const qty = parseFloat(item.stock) || 0;
+                const totalPrice = qty * price;
+                
+                grandTotalVal += totalPrice;
+                if (categoryValuations[item.category] !== undefined) {
+                    categoryValuations[item.category] += totalPrice;
+                }
+
+                return `
                 <div class="stock-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
                     <div class="flex justify-between items-start mb-2">
                         <span class="text-[9px] font-black uppercase px-2 py-1 bg-indigo-50 text-indigo-500 rounded-lg">${item.category}</span>
@@ -391,358 +460,570 @@
                             <button onclick="AppStore.requestDelete('${item.id}')" class="p-1.5 text-slate-300 hover:text-rose-500">🗑️</button>
                         </div>
                     </div>
-                    <h4 class="font-bold text-slate-800 my-4 truncate">${item.name}</h4>
+                    <h4 class="font-bold text-slate-800 my-4 truncate" title="${item.name}">${item.name}</h4>
                     <div class="${item.stock <= 0 ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-100'} p-4 rounded-xl border mb-4 text-center">
                         <span class="text-3xl font-black ${item.stock <= 0 ? 'text-rose-600' : (item.stock <= (item.min || 5) ? 'text-amber-500' : 'text-slate-800')}">${item.stock}</span>
                         <span class="text-xs font-bold text-slate-400">${item.unit}</span>
                         ${item.stock <= 0 ? '<p class="text-[9px] font-black text-rose-500 uppercase mt-1 out-of-stock-animate">⚠️ พัสดุหมด</p>' : ''}
                     </div>
+
+                    <div class="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 mb-4 text-xs space-y-1">
+                        <div class="flex justify-between text-slate-500 font-medium">
+                            <span>ราคาต่อหน่วย:</span>
+                            <span class="font-bold text-slate-700">${price.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span>
+                        </div>
+                        <div class="flex justify-between text-slate-500 font-medium">
+                            <span>มูลค่าคงคลัง:</span>
+                            <span class="font-black text-indigo-600">${totalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-2">
                         <button onclick="AppStore.openAction('${item.id}', 'out')" class="py-2 bg-rose-500 text-white rounded-lg text-[10px] font-black uppercase shadow-md">เบิกออก</button>
                         <button onclick="AppStore.openAction('${item.id}', 'in')" class="py-2 bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase shadow-md">รับเข้า</button>
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
+
+            const statGrandEl = document.getElementById('statGrandValue');
+            if (statGrandEl) {
+                statGrandEl.innerText = grandTotalVal.toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' บาท';
+            }
+
+            const catContainer = document.getElementById('categorySummaryContainer');
+            if (catContainer) {
+                let catHtml = '';
+                Object.keys(categoryValuations).forEach(cat => {
+                    catHtml += `
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
+                            <span class="truncate font-bold text-slate-500" title="${cat}">${cat}:</span>
+                            <span class="font-black text-slate-800 whitespace-nowrap">${categoryValuations[cat].toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span>
+                        </div>`;
+                });
+                catContainer.innerHTML = catHtml;
+            }
         }
 
         function renderHistory() {
-            const list = document.getElementById('history-list');
-            if (!list) return;
+            const tbody = document.getElementById('history-list');
+            if (!tbody) return;
+            const itemsToShow = state.history.slice(0, 100);
+            tbody.innerHTML = itemsToShow.map(h => {
+                const price = parseFloat(h.price) || 0;
+                const amt = parseFloat(h.amount) || 0;
+                const total = amt * price;
+                
+                let badge = '';
+                if (h.action_text === 'ลบหมวดหมู่') {
+                    badge = '<span class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-md font-bold text-[10px]">🗑️ ลบหมวดหมู่</span>';
+                } else if(h.type === 'in' && h.action_text === 'บวกยอดสะสม') {
+                    badge = '<span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md font-bold text-[10px]">📥 ซ้ำ/บวกสะสม</span>';
+                } else if(h.type === 'in') {
+                    badge = '<span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-md font-bold text-[10px]">📥 รับเข้า</span>';
+                } else if(h.type === 'out') {
+                    badge = '<span class="px-2.5 py-1 bg-rose-50 text-rose-600 rounded-md font-bold text-[10px]">📤 เบิกออก</span>';
+                } else if(h.type === 'create') {
+                    badge = '<span class="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-md font-bold text-[10px]">✨ เพิ่มใหม่</span>';
+                } else if(h.type === 'add_category') {
+                    badge = '<span class="px-2.5 py-1 bg-purple-50 text-purple-600 rounded-md font-bold text-[10px]">📁 เพิ่มหมวดหมู่</span>';
+                } else if(h.type === 'delete') {
+                    badge = '<span class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-md font-bold text-[10px]">🗑️ ลบวัสดุ</span>';
+                } else {
+                    badge = '<span class="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-md font-bold text-[10px]">📝 แก้ไข</span>';
+                }
 
-            if (!state.history || state.history.length === 0) {
-                list.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-xs font-bold text-slate-400 bg-slate-50">ยังไม่มีประวัติกิจกรรมในระบบ</td></tr>`;
-                return;
-            }
-
-            const sortedHistory = [...state.history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            const recentHistory = sortedHistory.slice(0, 100);
-
-            list.innerHTML = recentHistory.map(h => {
-                let typeBadge = h.action_text || h.type;
+                let dStr = '-';
+                if(h.timestamp) {
+                    try { dStr = new Date(h.timestamp).toLocaleString('th-TH'); } catch(e){}
+                }
 
                 return `
-                    <tr class="border-b border-slate-100 text-xs font-medium text-slate-600 hover:bg-slate-50/50">
-                        <td class="px-6 py-4 whitespace-nowrap">${new Date(h.timestamp).toLocaleString('th-TH')}</td>
-                        <td class="px-6 py-4 font-bold text-slate-800">${h.item || '-'}</td>
-                        <td class="px-6 py-4 text-center">${typeBadge}</td>
-                        <td class="px-6 py-4 text-right font-black">${h.amount || '-'}</td>
-                        <td class="px-6 py-4">${h.user || '-'}</td>
-                        <td class="px-6 py-4 text-slate-400 font-bold max-w-[180px] truncate" title="${h.remark || '-'}">${h.remark || '-'}</td>
-                    </tr>`;
+                <tr class="text-xs font-semibold text-slate-600 hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap font-medium text-slate-400">${dStr}</td>
+                    <td class="px-6 py-4 font-bold text-slate-800">${h.item}</td>
+                    <td class="px-6 py-4 text-center">${badge}</td>
+                    <td class="px-6 py-4 text-right font-black ${amt > 0 ? (h.type==='in'?'text-emerald-500':'text-rose-500'):'text-slate-400'}">${amt}</td>
+                    <td class="px-6 py-4 font-bold text-slate-500">${h.user || '-'}</td>
+                    <td class="px-4 py-3 text-right text-slate-500">${price.toLocaleString('th-TH', {minimumFractionDigits:2})} บ.</td>
+                    <td class="px-4 py-3 text-right font-bold text-slate-700">${total.toLocaleString('th-TH', {minimumFractionDigits:2})} บ.</td>
+                    <td class="px-6 py-4 text-slate-400 text-[11px] font-normal max-w-[200px] truncate" title="${h.remark || ''}">${h.remark || '-'}</td>
+                </tr>`;
             }).join('');
         }
 
         function renderCats() {
-            const filter = document.getElementById('filterCategory');
-            const input = document.getElementById('itemCat');
-            const list = document.getElementById('cat-list');
-            if(!filter || !input || !list) return;
-
-            if (filter.options.length > 1) {
-                const opt = state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
-                input.innerHTML = opt;
-                list.innerHTML = state.categories.map(c => `<div class="flex justify-between items-center p-2 bg-slate-50 rounded-lg text-xs font-bold mb-1"><span>${c}</span><button onclick="AppStore.deleteCat('${c}')" class="text-rose-300 hover:text-rose-600 transition-all">✕</button></div>`).join('');
-                return;
-            }
-
-            const opt = state.categories.map(c => `<option value="${c}" class="text-slate-900 bg-white font-bold">${c}</option>`).join('');
-            filter.innerHTML = `<option value="all" class="text-slate-900 bg-white font-bold">ทุกหมวดหมู่</option>` + opt;
-            input.innerHTML = opt;
+            const filterSelect = document.getElementById('filterCategory');
+            const itemCatSelect = document.getElementById('itemCat');
+            const catListDiv = document.getElementById('cat-list');
             
-            input.classList.add('text-slate-800', 'bg-white');
-            filter.classList.add('text-slate-800', 'bg-white');
+            const currentFilterVal = filterSelect ? filterSelect.value : 'all';
+            const currentItemCatVal = itemCatSelect ? itemCatSelect.value : '';
 
-            list.innerHTML = state.categories.map(c => `
-                <div class="flex justify-between items-center p-2 bg-slate-50 rounded-lg text-xs font-bold mb-1">
-                    <span class="text-slate-700">${c}</span>
-                    <button onclick="AppStore.deleteCat('${c}')" class="text-rose-300 hover:text-rose-600 transition-all p-1">✕</button>
-                </div>`).join('');
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="all">ทุกหมวดหมู่</option>' + 
+                    state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+                filterSelect.value = currentFilterVal;
+            }
+            if (itemCatSelect) {
+                itemCatSelect.innerHTML = state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+                if (currentItemCatVal && state.categories.includes(currentItemCatVal)) {
+                    itemCatSelect.value = currentItemCatVal;
+                }
+            }
+            if (catListDiv) {
+                catListDiv.innerHTML = state.categories.map(c => `
+                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border">
+                        <span class="text-xs font-bold text-slate-700">${c}</span>
+                        ${c !== 'ทั่วไป' ? `<button onclick="AppStore.removeCatClick('${c}')" class="text-rose-500 font-bold text-xs hover:underline">ลบ</button>` : ''}
+                    </div>`).join('');
+            }
         }
 
-        function setSyncStatus(s) {
+        function setSyncStatus(status) {
             const dot = document.getElementById('sync-dot');
-            if(dot) dot.className = s === 'online' ? "w-1.5 h-1.5 rounded-full bg-emerald-500 sync-pulse" : "w-1.5 h-1.5 rounded-full bg-amber-500";
-            const text = dot?.nextElementSibling;
-            if(text) text.innerText = s === 'online' ? 'Online' : 'Offline Mode';
+            if(!dot) return;
+            if(status === 'online') {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 sync-pulse';
+                dot.nextElementSibling.innerText = 'Online';
+            } else {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
+                dot.nextElementSibling.innerText = 'Offline Mode';
+            }
         }
 
-        async function handleForgotPassword() {
-            const defaultEmail = document.getElementById('auth-email') ? document.getElementById('auth-email').value.trim() : '';
-            const email = prompt("📩 กรุณากรอกอีเมลของคุณเพื่อรับลิงก์กู้คืนรหัสผ่าน:", defaultEmail);
-            if (email === null) return; 
-            const finalEmail = email.trim();
-            if (!finalEmail) return alert("❌ กรุณากรอกอีเมลให้ถูกต้องเพื่อรับลิงก์กู้คืนรหัสผ่าน");
-
-            const forgotBtn = document.getElementById('forgot-password-btn');
+        async function forgotPassword() {
+            const email = document.getElementById('auth-email').value.trim();
+            if(!email) { alert('กรุณากรอกอีเมลในช่องด้านบนก่อนกดลืมรหัสผ่าน'); return; }
             try {
-                if(forgotBtn) {
-                    forgotBtn.disabled = true;
-                    forgotBtn.innerText = '⏳ กำลังส่งลิงก์...';
-                }
-                await sendPasswordResetEmail(auth, finalEmail);
-                alert(`📩 ระบบได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปยังอีเมล: ${finalEmail} เรียบร้อยแล้วครับ\nกรุณาเช็กที่กล่องข้อความหรืออีเมลขยะ (Junk/Spam)`);
-            } catch (error) {
-                if (error.code === 'auth/user-not-found') alert('❌ ไม่พบอีเมลนี้ในระบบคลังพัสดุ กรุณาตรวจสอบการสะกดคำอีกครั้ง');
-                else if (error.code === 'auth/invalid-email') alert('❌ รูปแบบอีเมลไม่ถูกต้อง');
-                else alert('❌ เกิดข้อผิดพลาด: ' + error.message);
-            } finally {
-                if(forgotBtn) {
-                    forgotBtn.disabled = false;
-                    forgotBtn.innerText = 'ลืมรหัสผ่าน?';
-                }
+                await sendPasswordResetEmail(auth, email);
+                alert('ระบบได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยังอีเมลของท่านแล้ว โปรดตรวจสอบกล่องข้อความพัสดุเข้า (รวมถึงกล่องจดหมายขยะ/Spam)');
+            } catch(err) {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
             }
         }
 
         return {
-            init, 
-            render: renderInventory, 
-            logout: () => { localStorage.clear(); location.reload(); },
-            forgotPassword: handleForgotPassword,
-            
-            switchAuth: (m) => {
-                state.authMode = m; 
-                const isLogin = m === 'login';
-                
-                document.getElementById('auth-btn').innerText = isLogin ? 'เข้าสู่ระบบ' : 'ยืนยันลงทะเบียน';
-                document.getElementById('tab-login').className = isLogin ? 'flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600' : 'flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400';
-                document.getElementById('tab-register').className = !isLogin ? 'flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600' : 'flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400';
-                
-                const nameWrap = document.getElementById('name-wrapper');
-                const orgWrap = document.getElementById('org-selection-wrapper');
-                const forgotWrap = document.getElementById('forgot-password-wrapper'); 
-                
-                if (nameWrap) nameWrap.style.display = isLogin ? 'none' : 'block';
-                if (orgWrap) orgWrap.style.display = isLogin ? 'none' : 'block';
-                if (forgotWrap) forgotWrap.style.display = isLogin ? 'block' : 'none'; 
-            },
-        
-            handleAuth: async () =>  {
-                const email = document.getElementById('auth-email').value.trim(); 
-                const pass = document.getElementById('auth-pass').value;
-                const name = document.getElementById('auth-name')?.value.trim();
-                const org = document.getElementById('orgName')?.value;
+            init: init,
+            switchAuth: (mode) => {
+                state.authMode = mode;
+                const loginBtn = document.getElementById('tab-login');
+                const regBtn = document.getElementById('tab-register');
+                const nameWrp = document.getElementById('name-wrapper');
+                const orgWrp = document.getElementById('org-selection-wrapper');
                 const authBtn = document.getElementById('auth-btn');
+                const forgotWrp = document.getElementById('forgot-password-wrapper');
 
-                if (state.authMode === 'register') {
-                    if (!email || !pass || !name || !org) {
-                        return alert("❌ กรุณากรอกข้อมูลให้ครบทุกช่อง (อีเมล, รหัสผ่าน, ชื่อ-นามสกุล, และหน่วยงาน)");
-                    }
-                    if (pass.length < 6) {
-                        return alert("❌ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษรตามมาตรฐานความปลอดภัย");
-                    }
+                if(mode === 'login') {
+                    loginBtn.className = "flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600";
+                    regBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400";
+                    nameWrp.style.display = 'none';
+                    orgWrp.style.display = 'none';
+                    forgotWrp.style.display = 'block';
+                    authBtn.innerText = 'เข้าสู่ระบบ';
+                } else {
+                    regBtn.className = "flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600";
+                    loginBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400";
+                    nameWrp.style.display = 'block';
+                    orgWrp.style.display = 'block';
+                    forgotWrp.style.display = 'none';
+                    authBtn.innerText = 'ลงทะเบียนระบบคลัง';
+                }
+            },
+            handleAuth: async () => {
+                const email = document.getElementById('auth-email').value.trim();
+                const pass = document.getElementById('auth-pass').value;
+                const name = document.getElementById('auth-name').value.trim();
+                const org = document.getElementById('orgName').value;
 
-                    try {
-                        authBtn.disabled = true;
-                        authBtn.innerText = '⏳ กำลังลงทะเบียน...';
+                if(!email || !pass) { alert('กรุณากรอกข้อมูลให้ครบถ้วน'); return; }
 
-                        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-                        const user = userCredential.user;
-
-                        await setDoc(doc(db, 'artifacts', appId, 'auth', 'userRegistry'), { 
-                            [user.uid]: { email: email, fullName: name, orgName: org } 
-                        }, { merge: true });
+                try {
+                    if(state.authMode === 'register') {
+                        if(!name || !org) { alert('กรุณากรอกชื่อและเลือกหน่วยงานสังกัด'); return; }
+                        const userCred = await createUserWithEmailAndPassword(auth, email, pass);
                         
-                        alert(`✅ ลงทะเบียนสำเร็จสำหรับ ${name}!\nระบบจะพากลับไปหน้าเข้าสู่ระบบ กรุณาล็อกอินด้วยอีเมลครับ`); 
-                        window.AppStore.switchAuth('login');
-                        document.getElementById('auth-pass').value = '';
-                    } catch (error) {
-                        if (error.code === 'auth/email-already-in-use') alert('❌ อีเมลนี้ถูกลงทะเบียนไปแล้ว');
-                        else if (error.code === 'auth/invalid-email') alert('❌ รูปแบบอีเมลไม่ถูกต้อง');
-                        else alert('❌ เกิดข้อผิดพลาด: ' + error.message);
-                    } finally {
-                        authBtn.disabled = false;
-                        authBtn.innerText = state.authMode === 'login' ? 'เข้าสู่ระบบ' : 'ยืนยันลงทะเบียน';
-                    }
-                } else {
-                    if (!email || !pass) {
-                        return alert("❌ กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน");
-                    }
-                    try {
-                        authBtn.disabled = true;
-                        authBtn.innerText = '⏳ กำลังตรวจสอบข้อมูล...';
-                        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-                        const user = userCredential.user;                           
-                        const docRef = doc(db, 'artifacts', appId, 'auth', 'userRegistry');
-                        const docSnap = await getDoc(docRef);    
-                        if (docSnap.exists() && docSnap.data()[user.uid]) {
-                            const userData = docSnap.data()[user.uid];                                 
-                            localStorage.setItem('currentUser', userData.fullName);
-                            localStorage.setItem('currentOrg', userData.orgName);
-                            localStorage.setItem('userUid', user.uid);
-                            state.currentUser = userData.fullName;
-                            state.currentOrg = userData.orgName;
-                            const authScreen = document.getElementById('auth-screen');
-                            if (authScreen) authScreen.classList.add('hidden');
-                            startApp(userData.fullName, userData.orgName);          
-                        } else {
-                            alert("⚠️ ไม่พบข้อมูลหน่วยงานของคุณในระบบ กรุณาติดต่อผู้ดูแลระบบ");
+                        let registry = {};
+                        try {
+                            const currentRegistrySnap = await getDoc(userRegistryRef);
+                            if(currentRegistrySnap.exists()) registry = currentRegistrySnap.data().users || {};
+                        } catch(e){}
+                        
+                        registry[email.toLowerCase().replace(/\./g, '_')] = { name: name, org: org };
+                        await setDoc(userRegistryRef, { users: registry }, { merge: true });
+
+                        localStorage.setItem('currentUser', name);
+                        localStorage.setItem('currentOrg', org);
+                        startApp(name, org);
+                    } else {
+                        const userCred = await signInWithEmailAndPassword(auth, email, pass);
+                        const registrySnap = await getDoc(userRegistryRef);
+                        if(registrySnap.exists()) {
+                            const uData = registrySnap.data().users?.[email.toLowerCase().replace(/\./g, '_')];
+                            if(uData) {
+                                localStorage.setItem('currentUser', uData.name);
+                                localStorage.setItem('currentOrg', uData.org);
+                                startApp(uData.name, uData.org);
+                                return;
+                            }
                         }
-                    } catch (error) {
-                        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                            alert('❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
-                        } else if (error.code === 'auth/too-many-requests') {
-                            alert('❌ บัญชีนี้ถูกระงับชั่วคราวเนื่องจากใส่รหัสผิดติดต่อกันหลายครั้ง กรุณารอซักครู่หรือกดลืมรหัสผ่านครับ');
-                        } else {
-                            alert('❌ ไม่สามารถเข้าสู่ระบบได้เนื่องจากปัญหาเครือข่าย: ' + error.message);
-                        }
-                    } finally {
-                        authBtn.disabled = false;
-                        authBtn.innerText = state.authMode === 'login' ? 'เข้าสู่ระบบ' : 'ยืนยันลงทะเบียน';
+                        alert('ไม่พบข้อมูลหน่วยงานสังกัดของบัญชีนี้ กรุณาติดต่อผู้ดูแลระบบ');
                     }
+                } catch(err) {
+                    alert('เกิดข้อผิดพลาด: ' + err.message);
                 }
             },
-            saveItem: async () => {
-                const id = document.getElementById('editId').value; 
-                const name = document.getElementById('itemName').value.trim(); 
-                const qty = parseInt(document.getElementById('itemQty').value) || 0; 
-                const unit = document.getElementById('itemUnit').value.trim() || 'ชิ้น'; 
-                const cat = document.getElementById('itemCat').value; 
-                const min = parseInt(document.getElementById('itemMin').value) || 5;
-                const remark = document.getElementById('itemRemark').value.trim() || "-"; // ดึงข้อมูลหมายเหตุ
-
-                if(!name) return;
-                const existing = state.inventory.find(x => x.name.toLowerCase() === name.toLowerCase());
-                
-                if (id) {
-                    const idx = state.inventory.findIndex(x => x.id === id);
-                    state.inventory[idx] = { ...state.inventory[idx], name, stock: qty, unit, category: cat, min };
-                    // บันทึกประเภท 'edit' พร้อมใส่หมายเหตุลงในช่องประวัติกิจกรรม
-                    state.history.unshift({ item: name, type: 'edit', action_text: 'แก้ไขวัสดุ', user: state.currentUser, timestamp: new Date().toISOString(), amount: qty, remark: remark });
-                } else if (existing) {
-                    existing.stock += qty;
-                    state.history.unshift({ item: name, type: 'in', amount: qty, user: state.currentUser, timestamp: new Date().toISOString(), action_text: 'บวกยอดสะสม', remark: remark });
-                    alert(`📥 พบชื่อวัสดุซ้ำ! บวกยอดเดิมให้เรียบร้อยแล้ว`);
-                } else {
-                    state.inventory.push({ id: 'ITM-'+Date.now(), name, stock: qty, unit, category: cat, min });
-                    state.history.unshift({ item: name, type: 'create', amount: qty, user: state.currentUser, timestamp: new Date().toISOString(), action_text: 'เพิ่มใหม่', remark: remark });
-                }
-                await persist(); document.getElementById('itemModal').classList.add('hidden');
+            logout: () => {
+                auth.signOut();
+                localStorage.clear();
+                state.currentUser = null; state.currentOrg = null; activeDocRef = null;
+                document.getElementById('main-app').classList.add('hidden');
+                document.getElementById('auth-screen').classList.remove('hidden');
             },
-            openAction: (id, type) => {
-                const item = state.inventory.find(x => x.id === id); document.getElementById('actionItemName').innerText = item.name;
-                document.getElementById('actionLabel').innerText = type === 'in' ? 'รับเข้าวัสดุ' : 'เบิกออกวัสดุ';
-                const btn = document.getElementById('confirmActionBtn');
-                btn.innerText = type === 'in' ? 'ยืนยันรับเข้า' : 'ยืนยันเบิกออก';
-                btn.className = type === 'in' ? 'flex-1 py-4 bg-emerald-500 text-white rounded-2xl font-black shadow-lg' : 'flex-1 py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg';
-                window.activeAction = { id, type }; document.getElementById('actionModal').classList.remove('hidden');
+            render: () => { renderInventory(); },
+            setStatFilter: (filterType) => {
+                state.currentStatFilter = filterType;
+                renderInventory();
             },
-            confirmAction: async () => {
-                const amt = parseInt(document.getElementById('actionAmount').value) || 0; 
-                const { id, type } = window.activeAction;
-                const idx = state.inventory.findIndex(x => x.id === id);
-                
-                if (type === 'out' && state.inventory[idx].stock < amt) return alert("❌ ยอดคงเหลือไม่พอเบิก!");
-                
-                const remarkInput = document.getElementById('actionRemark');
-                const remarkValue = remarkInput ? remarkInput.value.trim() : "";
-
-                state.inventory[idx].stock += (type === 'in' ? amt : -amt);
-                
-                state.history.unshift({ 
-                    item: state.inventory[idx].name, 
-                    type: type, 
-                    amount: amt, 
-                    user: state.currentUser, 
-                    timestamp: new Date().toISOString(), 
-                    action_text: (type === 'in' ? 'รับเข้า' : 'เบิกออก'),
-                    itemCat: state.inventory[idx].category || "-",
-                    remark: remarkValue || "-"
-                });
-                
-                await persist(); 
-                if (remarkInput) remarkInput.value = '';
-                document.getElementById('actionAmount').value = ''; 
-                document.getElementById('actionModal').classList.add('hidden');
-                renderInventory(); 
+            openItemModal: () => {
+                document.getElementById('modalTitle').innerText = 'เพิ่มพัสดุใหม่';
+                document.getElementById('editId').value = '';
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemQty').value = '0';
+                document.getElementById('itemQty').disabled = false;
+                document.getElementById('itemUnit').value = 'ชิ้น';
+                document.getElementById('itemMin').value = '5';
+                document.getElementById('itemPrice').value = '0';
+                document.getElementById('itemRemark').value = '';
+                renderCats();
+                document.getElementById('itemModal').classList.remove('hidden');
             },
             editItem: (id) => {
-                const item = state.inventory.find(x => x.id === id);
-                document.getElementById('editId').value = item.id; document.getElementById('itemName').value = item.name;
-                document.getElementById('itemQty').value = item.stock; document.getElementById('itemUnit').value = item.unit;
-                document.getElementById('itemCat').value = item.category; document.getElementById('itemMin').value = item.min || 5;
-                document.getElementById('itemRemark').value = ''; // เคลียร์ช่องหมายเหตุเก่าให้พร้อมรับค่าใหม่
-                document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูลวัสดุ'; document.getElementById('itemModal').classList.remove('hidden');
+                const item = state.inventory.find(i => i.id === id);
+                if(!item) return;
+                document.getElementById('modalTitle').innerText = 'แก้ไขพัสดุ';
+                document.getElementById('editId').value = item.id;
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('itemQty').value = item.stock;
+                document.getElementById('itemQty').disabled = true;
+                document.getElementById('itemUnit').value = item.unit || 'ชิ้น';
+                document.getElementById('itemMin').value = item.min || '5';
+                document.getElementById('itemPrice').value = item.price || '0';
+                document.getElementById('itemRemark').value = '';
+                renderCats();
+                document.getElementById('itemCat').value = item.category || 'ทั่วไป';
+                document.getElementById('itemModal').classList.remove('hidden');
+            },
+            closeModal: (mid) => { document.getElementById(mid).classList.add('hidden'); },
+            saveItem: async () => {
+                const id = document.getElementById('editId').value;
+                const name = document.getElementById('itemName').value.trim();
+                const qty = parseInt(document.getElementById('itemQty').value) || 0;
+                const price = parseFloat(document.getElementById('itemPrice').value) || 0; 
+                const unit = document.getElementById('itemUnit').value.trim() || 'ชิ้น';
+                const cat = document.getElementById('itemCat').value;
+                const min = parseInt(document.getElementById('itemMin').value) || 5;
+                const remark = document.getElementById('itemRemark').value.trim() || "-";
+
+                if(!name) return alert('กรุณากรอกชื่อวัสดุ');
+
+                const existing = state.inventory.find(x => x.name.trim().toLowerCase() === name.toLowerCase());
+
+                if (id) {
+                    const idx = state.inventory.findIndex(x => x.id === id);
+                    state.inventory[idx] = { ...state.inventory[idx], name, price: price, unit, category: cat, min };
+                    state.history.unshift({ item: name, type: 'edit', action_text: 'แก้ไขวัสดุ', user: state.currentUser, timestamp: new Date().toISOString(), amount: qty, price: price, remark: remark });
+                } else if (existing) {
+                    existing.stock = (parseInt(existing.stock) || 0) + qty;
+                    existing.price = price; 
+                    state.history.unshift({ item: existing.name, type: 'in', action_text: 'บวกยอดสะสม', amount: qty, price: price, user: state.currentUser, timestamp: new Date().toISOString(), remark: remark });
+                    alert(`📥 พบชื่อวัสดุซ้ำระบบทำการบวกยอดสะสมเข้าไปในรายการ "${existing.name}" เดิมให้เรียบร้อยแล้วครับ`);
+                } else {
+                    state.inventory.push({ id: 'ITM-'+Date.now(), name, stock: qty, price: price, unit, category: cat, min });
+                    state.history.unshift({ item: name, type: 'create', action_text: 'เพิ่มใหม่', amount: qty, price: price, user: state.currentUser, timestamp: new Date().toISOString(), remark: remark });
+                }
+                
+                await persist();
+                
+                document.getElementById('editId').value = '';
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemQty').value = '0';
+                document.getElementById('itemPrice').value = '0';
+                document.getElementById('itemRemark').value = '';
+                
+                document.getElementById('itemModal').classList.add('hidden');
             },
             requestDelete: (id) => {
-                state.deleteTarget = id; const item = state.inventory.find(x => x.id === id);
+                const item = state.inventory.find(i => i.id === id);
+                if(!item) return;
+                state.deleteTarget = id;
                 document.getElementById('deleteItemName').innerText = item.name;
                 document.getElementById('confirmDeleteModal').classList.remove('hidden');
             },
             executeDelete: async () => {
-                const item = state.inventory.find(x => x.id === state.deleteTarget);
-                state.history.unshift({ item: item.name, type: 'delete', action_text: 'ลบพัสดุ', user: state.currentUser, timestamp: new Date().toISOString(), remark: "ถูกลบออกจากคลัง" });
-                state.inventory = state.inventory.filter(x => x.id !== state.deleteTarget);
-                await persist(); document.getElementById('confirmDeleteModal').classList.add('hidden');
-            },
-         triggerExport: () => {
-                try {
-                    // 1. เตรียมข้อมูลสำหรับ ชีตที่ 1: รายงานสถานะคลังวัสดุ
-                    const inventoryData = [
-                        ["หมวดหมู่", "ชื่อพัสดุ", "จำนวนคงเหลือ", "หน่วยนับ", "สถานะ"]
-                    ];
-                    state.inventory.forEach(i => {
-                        const status = i.stock <= 0 ? 'หมด' : (i.stock <= (i.min || 5) ? 'ใกล้หมด' : 'ปกติ');
-                        inventoryData.push([i.category, i.name, i.stock, i.unit, status]);
+                if(!state.deleteTarget) return;
+                const id = state.deleteTarget;
+                const item = state.inventory.find(i => i.id === id);
+                if(item) {
+                    state.inventory = state.inventory.filter(i => i.id !== id);
+                    state.history.unshift({
+                        item: item.name, type: 'delete', amount: item.stock, price: item.price || 0, user: state.currentUser,
+                        timestamp: new Date().toISOString(), remark: `ลบรายการวัสดุออกจากระบบถาวร (ยอดคงเหลือเดิม: ${item.stock})`
                     });
-
-                    // 2. เตรียมข้อมูลสำหรับ ชีตที่ 2: ประวัติกิจกรรม
-                    const historyData = [
-                        ["วันที่/เวลา", "ผู้ทำรายการ", "รายการวัสดุ", "กิจกรรม", "จำนวน", "หมายเหตุ"]
-                    ];
-                    state.history.forEach(h => {
-                        const dFull = new Date(h.timestamp).toLocaleString('th-TH');
-                        const remark = h.remark || "-";
-                        historyData.push([dFull, h.user, h.item, h.action_text || h.type, h.amount || '-', remark]);
-                    });
-
-                    // 3. สร้าง สมุดงาน (Workbook) ใหม่
-                    const wb = XLSX.utils.book_new();
-
-                    // 4. แปลงอาร์เรย์ข้อมูลเป็นแผ่นงาน (Worksheet)
-                    const wsInventory = XLSX.utils.aoa_to_sheet(inventoryData);
-                    const wsHistory = XLSX.utils.aoa_to_sheet(historyData);
-
-                    // 5. นำแผ่นงานจัดใส่เข้า Workbook พร้อมตั้งชื่อชีตแยกกัน
-                    XLSX.utils.book_append_sheet(wb, wsInventory, "สถานะคลังวัสดุ");
-                    XLSX.utils.book_append_sheet(wb, wsHistory, "ประวัติกิจกรรม");
-
-                    // 6. สั่งดาวน์โหลดไฟล์ออกมาเป็นนามสกุล .xlsx ทันที
-                    const fileName = `รายงานคลังแยกชีต_${state.currentOrg}_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.xlsx`;
-                    XLSX.writeFile(wb, fileName);
-
-                } catch (error) {
-                    console.error("Export Excel Error:", error);
-                    alert("❌ เกิดข้อผิดพลาดในการส่งออกไฟล์ Excel: " + error.message);
                 }
+                state.deleteTarget = null;
+                document.getElementById('confirmDeleteModal').className = 'modal-overlay fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4';
+                await persist();
             },
-            setStatFilter: (filterType) => {
-                state.currentStatFilter = filterType;
-                renderInventory(); 
+            openAction: (id, type) => {
+                const item = state.inventory.find(i => i.id === id);
+                if(!item) return;
+                document.getElementById('actionLabel').innerText = type === 'in' ? '📥 รับพัสดุเข้าคลัง' : '📤 เบิกพัสดุออกจากคลัง';
+                document.getElementById('actionItemName').innerText = item.name;
+                document.getElementById('actionAmount').value = '';
+                document.getElementById('actionRemark').value = '';
+                
+                const btn = document.getElementById('confirmActionBtn');
+                btn.className = `flex-1 py-4 text-white rounded-2xl font-black shadow-lg text-xs tracking-widest ${type==='in'?'bg-emerald-500':'bg-rose-500'}`;
+                btn.innerText = type === 'in' ? 'ยืนยันรับเข้า' : 'ยืนยันการเบิก';
+                btn.setAttribute('data-id', id);
+                btn.setAttribute('data-type', type);
+
+                document.getElementById('actionModal').classList.remove('hidden');
+                setTimeout(() => document.getElementById('actionAmount').focus(), 200);
             },
+            confirmAction: async () => {
+                const btn = document.getElementById('confirmActionBtn');
+                const id = btn.getAttribute('data-id');
+                const type = btn.getAttribute('data-type');
+                const amt = parseInt(document.getElementById('actionAmount').value) || 0;
+                const rMark = document.getElementById('actionRemark').value.trim();
+
+                if(amt <= 0) { alert('กรุณากรอกจำนวนที่ถูกต้อง'); return; }
+
+                const idx = state.inventory.findIndex(i => i.id === id);
+                if(idx === -1) return;
+                const item = state.inventory[idx];
+
+                if(type === 'out' && parseInt(item.stock) < amt) {
+                    alert(`วัสดุในคลังมีไม่เพียงพอสำหรับการเบิกพัสดุ (คงเหลือยอด: ${item.stock})`);
+                    return;
+                }
+
+                const change = type === 'in' ? amt : -amt;
+                item.stock = parseInt(item.stock) + change;
+
+                state.history.unshift({
+                    item: item.name, type: type, amount: amt, price: item.price || 0, user: state.currentUser,
+                    timestamp: new Date().toISOString(), remark: rMark || (type === 'in' ? 'รับพัสดุเข้าคลังทั่วไป' : 'เบิกวัสดุใช้งานทั่วไป')
+                });
+
+                document.getElementById('actionModal').classList.add('hidden');
+                await persist();
+            },
+            openCategoryModal: () => { renderCats(); document.getElementById('categoryModal').classList.remove('hidden'); },
             addCat: async () => {
-                const v = document.getElementById('newCatInput').value.trim();
-                if(v && !state.categories.includes(v)) { 
-                    state.categories.push(v); 
-                    state.history.unshift({ item: v, type: 'add_category', action_text: 'เพิ่มหมวดหมู่', user: state.currentUser, timestamp: new Date().toISOString(), remark: `เพิ่มหมวดหมู่ใหม่: ${v}` });
-                    await persist(); document.getElementById('newCatInput').value = ''; 
+                const inp = document.getElementById('newCatInput');
+                const val = inp.value.trim();
+                if(!val || state.categories.includes(val)) return;
+                
+                state.categories.push(val);
+                
+                state.history.unshift({
+                    item: `หมวดหมู่: ${val}`,
+                    type: 'add_category',
+                    amount: 0,
+                    price: 0,
+                    user: state.currentUser,
+                    timestamp: new Date().toISOString(),
+                    remark: 'เพิ่มหมวดหมู่ใหม่ในระบบ'
+                });
+                
+                inp.value = '';
+                await persist();
+            },
+            deleteCat: async (cat) => {
+                if(cat === 'ทั่วไป') return;
+                if(confirm(`คุณต้องการลบหมวดหมู่ "${cat}" ใช่หรือไม่?\n(พัสดุที่อยู่ในหมวดหมู่นี้จะถูกเปลี่ยนเป็นกลุ่ม "ทั่วไป")`)) {
+                    state.categories = state.categories.filter(c => c !== cat);
+                    state.inventory.forEach(i => { if(i.category === cat) i.category = 'ทั่วไป'; });
+                    await persist();
                 }
             },
-            deleteCat: async (c) => { 
-                if(state.categories.length > 1) { 
-                    state.categories = state.categories.filter(x => x !== c); 
-                    state.history.unshift({ item: c, type: 'delete_category', action_text: 'ลบหมวดหมู่', user: state.currentUser, timestamp: new Date().toISOString(), remark: `ลบหมวดหมู่: ${c}` });
-                    await persist(); 
-                } 
+            exportBackup: () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+                const dlAnchorElem = document.createElement('a');
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", `STOCK_BACKUP_${state.currentOrg}_${new Date().toISOString().slice(0,10)}.json`);
+                dlAnchorElem.click();
             },
-            exportBackup: () => { const b = new Blob([JSON.stringify(state)]); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `BACKUP_${state.currentOrg}.json`; a.click(); },
-            importBackup: (input) => { const r = new FileReader(); r.onload = async (e) => { const d = JSON.parse(e.target.result); state.inventory = d.inventory; state.categories = d.categories; state.history = d.history || []; await persist(); alert("กู้คืนสำเร็จ!"); }; r.readAsText(input.files[0]); },
-            openItemModal: () => { document.getElementById('editId').value = ''; document.getElementById('itemName').value = ''; document.getElementById('itemQty').value = '0'; document.getElementById('itemRemark').value = ''; document.getElementById('modalTitle').innerText = 'เพิ่มวัสดุใหม่'; document.getElementById('itemModal').classList.remove('hidden'); },
-            openCategoryModal: () => document.getElementById('categoryModal').classList.remove('hidden'),
-            closeModal: (id) => document.getElementById(id).classList.add('hidden')
+            importBackup: (input) => {
+                const file = input.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if(imported.inventory && imported.categories) {
+                            if(confirm('ต้องการเขียนทับข้อมูลคลังปัจจุบันด้วยไฟล์สำรองนี้ใช่หรือไม่?')) {
+                                state.inventory = imported.inventory;
+                                state.categories = imported.categories;
+                                state.history = imported.history || [];
+                                await persist();
+                                alert('นำเข้าข้อมูลสำรองคลังวัสดุเสร็จสิ้น!');
+                                document.getElementById('categoryModal').classList.add('hidden');
+                            }
+                        } else alert('รูปแบบไฟล์ไม่ถูกต้อง');
+                    } catch(err) { alert('เกิดข้อผิดพลาดในการอ่านไฟล์'); }
+                };
+                reader.readAsText(file);
+            },
+triggerExport: () => {
+            if (!state.inventory || state.inventory.length === 0) {
+                return alert('ไม่มีข้อมูลพัสดุสำหรับออกรายงาน');
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            // 🎨 ฟังก์ชันภายในสำหรับปรับแต่งความกว้างแบบกระชับ และจัดการสไตล์ตัวเลขการเงิน
+            const formatAndStyleSheet = (ws) => {
+                if (!ws || !ws['!ref']) return;
+                
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                const colWidths = [];
+                
+                // 1. จัดขนาดความกว้างของแต่ละคอลัมน์ให้กระชับพอดีตัวอักษร ไม่โล่งเกินไป
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxLen = 4; 
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
+                        const cell = ws[cell_ref];
+                        if (cell && cell.v) {
+                            const valStr = cell.v.toString();
+                            // บีบสัดส่วนภาษาไทยให้แคบลงและสมส่วนอ่านง่าย
+                            const len = valStr.match(/[ก-าพ-ะ]/g) ? valStr.length * 1.25 : valStr.length;
+                            if (len > maxLen) maxLen = len;
+                        }
+                    }
+                    
+                    // 💡 พิเศษ: บีบคอลัมน์ที่ 1 (คอลัมน์ลำดับ C === 0) ให้แคบกระชับเป็นพิเศษ ไม่กว้างหลวม
+                    if (C === 0) {
+                        colWidths.push({ wch: 6 }); // ขนาดกะทัดรัดพอดีตัวเลข 1, 2, 3...
+                    } else {
+                        colWidths.push({ wch: Math.min(Math.max(maxLen + 2, 8), 35) });
+                    }
+                }
+                ws['!cols'] = colWidths;
+
+                // 2. ลูปใส่รายละเอียดตกแต่งฟอร์แมตตัวเลขการเงินแยกแยะง่าย
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const header_ref = XLSX.utils.encode_cell({ c: C, r: 0 });
+                    const header_cell = ws[header_ref];
+                    const header_title = header_cell ? header_cell.v.toString() : '';
+
+                    for (let R = 1; R <= range.e.r; ++R) {
+                        const data_ref = XLSX.utils.encode_cell({ c: C, r: R });
+                        const data_cell = ws[data_ref];
+                        
+                        if (data_cell) {
+                            // 💡 ลูกเล่นสำหรับคอลัมน์ที่ 1: จัดตำแหน่งตัวเลขลำดับให้อยู่กึ่งกลางเป๊ะ ๆ (Center Alignment) อ่านง่ายสบายตา
+                            if (C === 0) {
+                                data_cell.z = '0'; // ฟอร์แมตตัวเลขจำนวนเต็มธรรมดา
+                            }
+                            // จัดฟอร์แมตเงินบัญชีมีทศนิยมชิดขวา
+                            else if (typeof data_cell.v === 'number' && (header_title.includes('บาท') || header_title.includes('ราคา') || header_title.includes('รวม'))) {
+                                data_cell.z = '#,##0.00'; 
+                            }
+                            // จัดฟอร์แมตยอดคงคลังทั่วไป
+                            else if (typeof data_cell.v === 'number' && (header_title.includes('คงเหลือ') || header_title.includes('จำนวน') || header_title.includes('ขั้นต่ำ'))) {
+                                data_cell.z = '#,##0';
+                            }
+                        }
+                    }
+                }
+            };
+
+            // 1. ชีตพัสดุทั้งหมด (คงสภาพลำดับและช่องข้อมูลเดิมตาม รพ.สต.ควน)
+            const allData = state.inventory.map((x, index) => ({
+                'ลำดับ': index + 1,
+                'ชื่อวัสดุ/พัสดุ': x.name,
+                'หมวดหมู่': x.category || 'ทั่วไป',
+                'คงเหลือ': parseInt(x.stock) || 0,
+                'หน่วยนับ': x.unit || 'ชิ้น',
+                'ราคาต่อหน่วย (บาท)': parseFloat(x.price) || 0,
+                'มูลค่ารวม (บาท)': (parseInt(x.stock) || 0) * (parseFloat(x.price) || 0),
+                'เกณฑ์ขั้นต่ำ': parseInt(x.min) || 5,
+                'สถานะ': (parseInt(x.stock) || 0) <= 0 ? 'สินค้าหมด' : ((parseInt(x.stock) || 0) <= (parseInt(x.min) || 5) ? 'ใกล้หมด' : 'ปกติ')
+            }));
+            const wsAll = XLSX.utils.json_to_sheet(allData);
+            formatAndStyleSheet(wsAll);
+            XLSX.utils.book_append_sheet(wb, wsAll, "พัสดุทั้งหมด");
+
+            // 2. ชีตแยกตามหมวดหมู่ (ดึงข้อมูลแยกแท็บตามประเภทวัสดุอัตโนมัติ)
+            const categories = [...new Set(state.inventory.map(x => x.category || 'ทั่วไป'))];
+            categories.forEach(cat => {
+                const catData = state.inventory
+                    .filter(x => (x.category || 'ทั่วไป') === cat)
+                    .map((x, index) => ({
+                        'ลำดับ': index + 1,
+                        'ชื่อวัสดุ/พัสดุ': x.name,
+                        'คงเหลือ': parseInt(x.stock) || 0,
+                        'หน่วยนับ': x.unit || 'ชิ้น',
+                        'ราคาต่อหน่วย (บาท)': parseFloat(x.price) || 0,
+                        'มูลค่ารวม (บาท)': (parseInt(x.stock) || 0) * (parseFloat(x.price) || 0),
+                        'เกณฑ์ขั้นต่ำ': parseInt(x.min) || 5
+                    }));
+                
+                const wsCat = XLSX.utils.json_to_sheet(catData);
+                formatAndStyleSheet(wsCat);
+                const sheetName = cat.substring(0, 31); 
+                XLSX.utils.book_append_sheet(wb, wsCat, sheetName);
+            });
+
+            // 3. ชีตประวัติการทำรายการ (เก็บบันทึกประวัติกิจกรรมของ รพ.สต.ควน ไร้รอยต่อ)
+            const historyData = (state.history || []).map((h, index) => ({
+                'ลำดับ': index + 1,
+                'วัน-เวลา': h.timestamp ? new Date(h.timestamp).toLocaleString('th-TH') : '-',
+                'รายการพัสดุ': h.item,
+                'ประเภทกิจกรรม': h.action_text || (h.type === 'in' ? 'รับเข้า' : h.type === 'out' ? 'เบิกออก' : h.type === 'create' ? 'เพิ่มใหม่' : h.type === 'delete' ? 'ลบวัสดุ' : 'แก้ไข'),
+                'จำนวน': h.amount || 0,
+                'ราคาต่อหน่วย': h.price || 0,
+                'ราคารวม': (h.amount || 0) * (h.price || 0),
+                'ผู้ทำรายการ': h.user || 'ไม่ระบุ',
+                'หมายเหตุ': h.remark || '-'
+            }));
+            const wsHistory = XLSX.utils.json_to_sheet(historyData);
+            formatAndStyleSheet(wsHistory);
+            XLSX.utils.book_append_sheet(wb, wsHistory, "ประวัติการทำรายการ");
+
+            // ทำการบันทึกส่งออกไฟล์ Excel ทันที
+            XLSX.writeFile(wb, `รายงานวัสดุ_${state.currentOrg}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        },
+            removeCatClick: async (cat) => {
+                if(cat === 'ทั่วไป') return;
+                
+                // ➕ เพิ่มการบันทึกประวัติลง Audit Log ก่อนลบข้อมูล
+                state.history.unshift({ 
+                    item: `หมวดหมู่: ${cat}`, 
+                    type: 'edit', 
+                    action_text: 'ลบหมวดหมู่', 
+                    amount: 0, 
+                    price: 0, 
+                    user: state.currentUser, 
+                    timestamp: new Date().toISOString(), 
+                    remark: `ลบหมวดหมู่ออกถาวร (วัสดุเดิมถูกย้ายไปที่ 'ทั่วไป')` 
+                });
+
+                state.categories = state.categories.filter(c => c !== cat);
+                state.inventory.forEach(i => { if(i.category === cat) i.category = 'ทั่วไป'; });
+                
+                await persist();
+            },
+            forgotPassword: forgotPassword
         };
     })();
 
     window.AppStore = store;
-    store.init();
+    document.addEventListener('DOMContentLoaded', store.init);
 </script>
 </body>
 </html>
