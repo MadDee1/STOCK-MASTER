@@ -110,16 +110,16 @@
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8 text-center">
 
             <div onclick="document.getElementById('valuationModal').classList.remove('hidden')" 
-             class="bg-gradient-to-br from-slate-800 via-slate-950 to-indigo-950 text-white p-4 rounded-2xl shadow-xl border border-slate-700/60 text-left cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xl group relative overflow-hidden">
-              <div class="absolute inset-0 bg-white/[0.03] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div>
-                <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-                  <span>มูลค่ารวมวัสดุคงคลัง</span></p>
-                <p class="text-2xl font-black text-yellow-400 mt-1" id="statGrandValue">0.00 บาท</p>
-              </div>
-                <p class="text-slate-500 text-[9px] mt-2.5 group-hover:text-slate-400 transition-colors">
-                  <span>💡 คลิกที่กล่องนี้เพื่อดูสรุปยอดเงินแยกตามหมวดหมู่</span></p>
+                 class="bg-gradient-to-br from-slate-800 via-slate-950 to-indigo-950 text-white p-4 rounded-2xl shadow-xl border border-slate-700/60 text-left cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xl group relative overflow-hidden col-span-2 md:col-span-2">
+                <div class="absolute inset-0 bg-white/[0.03] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div>
+                    <p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                        <span>มูลค่าคงคลังรวม</span>
+                    </p>
+                    <p class="text-3xl font-black text-yellow-400 mt-1 tracking-tight" id="statGrandValue">0.00 บาท</p>
+                </div>
+                <p class="text-slate-500 text-[8px] mt-3 group-hover:text-slate-400 transition-colors">💡 คลิกดูแยกหมวดหมู่</p>
             </div>
 
             <div onclick="AppStore.setStatFilter('all'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-500 hover:scale-[1.02] active:scale-[0.98] transition-all">

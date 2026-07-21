@@ -1,6 +1,6 @@
 // 🎯 ทุกครั้งที่คุณ  แก้ไขโค้ด index.html ให้มาเปลี่ยนตัวเลขเวอร์ชันตรงนี้เพิ่มขึ้นเรื่อย ๆ ครับ
-// เช่น ครั้งต่อไปเปลี่ยนเป็น 'stock-master-cache-v4', 'stock-master-cache-v4'
-const CACHE_NAME = 'stock-master-cache-v3';
+// เช่น ครั้งต่อไปเปลี่ยนเป็น 'stock-master-cache-v3', 'stock-master-cache-v4'
+const CACHE_NAME = 'stock-master-cache-v4';
 
 const assets = [
   'index.html',
