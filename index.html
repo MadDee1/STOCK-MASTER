@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>STOCK MASTER PRO - V12.1 (Full Audit Log)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .stock-card { transition: all 0.2s ease; border: 1px solid #e2e8f0; position: relative; }
+        .stock-card:hover { border-color: #6366f1; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); }
+        .sync-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+        .out-of-stock-animate { animation: blink 1.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .hidden { display: none !important; }
+        .modal-overlay { z-index: 5000; backdrop-filter: blur(4px); }
+
+        /* 🖨️ สไตล์สำหรับการพิมพ์รายงานแดชบอร์ด (Print Stylesheet) */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #dashboardModal, #dashboardModal * {
+                visibility: visible;
+            }
+            #dashboardModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: auto;
+                background: white !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-900 pb-12">
+
+<div id="auth-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6">
+    <div class="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-2xl text-center">
+        <img src="Logologin.PNG" alt="Logo" class="h-20 mx-auto object-contain mb-4">
+        <p class="text-slate-400 text-xs font-bold uppercase mb-8 tracking-widest">ระบบบริหารคลังวัสดุ v12.1</p>
+        <div class="flex p-1 bg-slate-100 rounded-xl mb-6">
+            <button onclick="AppStore.switchAuth('login')" id="tab-login" class="flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600">เข้าสู่ระบบ</button>
+            <button onclick="AppStore.switchAuth('register')" id="tab-register" class="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400">ลงทะเบียน</button>
+        </div>
+        <div class="space-y-4 text-left">
+            <input type="email" id="auth-email" placeholder="อีเมล (Email)" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+            
+            <div id="name-wrapper" style="display: none;">
+                <input type="text" id="auth-name" placeholder="ชื่อ-นามสกุล" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div id="org-selection-wrapper" style="display: none;">
+                <select id="orgName" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none appearance-none">
+                    <option value="" disabled selected>-- เลือกหน่วยงานสังกัด --</option>
+                    <option value="รพ.สต.ปะนาเระ">รพ.สต.ปะนาเระ</option>
+                    <option value="รพ.สต.บ้านท่าทราย">รพ.สต.บ้านท่าทราย</option>
+                    <option value="รพ.สต.บ้านนอก">รพ.สต.บ้านนอก</option>
+                    <option value="รพ.สต.ดอน">รพ.สต.ดอน</option>
+                    <option value="รพ.สต.ควน">รพ.สต.ควน</option>
+                    <option value="รพ.สต.ท่าน้ำ">รพ.สต.ท่าน้ำ</option>
+                    <option value="รพ.สต.บ้านสุเหร่า">รพ.สต.บ้านสุเหร่า</option>
+                    <option value="รพ.สต.คอกกระบือ">รพ.สต.คอกกระบือ</option>
+                    <option value="รพ.สต.พ่อมิ่ง">รพ.สต.พ่อมิ่ง</option>
+                    <option value="รพ.สต.บางมะรวด">รพ.สต.บางมะรวด</option>
+                    <option value="รพ.สต.ศาลาหยุดพระ">รพ.สต.ศาลาหยุดพระ</option>
+                    <option value="รพ.สต.บ้านน้ำบ่อ">รพ.สต.บ้านน้ำบ่อ</option>
+                    <option value="รพ.สต.บ้านเตราะหัก">รพ.สต.บ้านเตราะหัก</option>
+                    <option value="รพ.สต.บ้านกลาง">รพ.สต.บ้านกลาง</option>
+                </select>
+            </div>
+
+            <input type="password" id="auth-pass" placeholder="รหัสผ่าน" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+            
+            <div id="forgot-password-wrapper" class="text-right mt-1" style="display: block;">
+                <a href="javascript:void(0)" id="forgot-password-btn" onclick="AppStore.forgotPassword()" class="text-xs font-bold text-indigo-600 hover:underline inline-block px-1 py-1">ลืมรหัสผ่าน?</a>
+            </div>
+            
+            <button onclick="AppStore.handleAuth()" id="auth-btn" class="w-full py-4 btn-primary text-white rounded-2xl font-black text-sm shadow-lg mt-4">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+</div>
+
+<div id="main-app" class="hidden">
+    <nav class="bg-white sticky top-0 z-50 border-b border-slate-200 shadow-sm px-6 h-16 flex items-center justify-between">
+        <img src="Logologin.PNG" alt="Logo" class="h-10 w-auto">
+        <div class="flex items-center gap-4">
+            <div class="text-right">
+                <p id="user-display" class="text-[11px] font-black text-slate-700 uppercase leading-none"></p>
+                <div class="flex items-center justify-end gap-1 mt-1">
+                    <span id="sync-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 sync-pulse"></span>
+                    <span class="text-[9px] font-bold text-slate-400">Online</span>
+                </div>
+            </div>
+            <button onclick="AppStore.logout()" class="p-1 bg-slate-50 rounded-l text-slate-500 hover:text-rose-500 transition-colors">ออกจากระบบ</button>
+        </div>
+    </nav>
+
+    <header class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div><h1 class="text-3xl font-black text-slate-900 tracking-tight">คลังวัสดุ</h1><p class="text-slate-400 text-sm font-medium">ระบบจัดการวัสดุ</p></div>
+            <div class="flex flex-wrap justify-center items-center gap-2">
+
+                <button onclick="AppStore.openDashboardModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl shadow-sm flex items-center gap-2 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg> ดูแดชบอร์ด / กราฟสรุป
+                </button>
+
+                <button onclick="AppStore.triggerExport()" class="px-4 py-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-700 shadow-sm flex items-center gap-1.5 transition-all">
+                    <span>📥 รายงาน (Excel)</span>
+                </button>
+
+                <button onclick="AppStore.openCategoryModal()" class="px-4 py-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 shadow-sm flex items-center gap-1.5 transition-all">
+                    <span>⚙️ หมวดหมู่ & Backup</span>
+                </button>
+
+                <button onclick="AppStore.openItemModal()" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-lg flex items-center gap-1.5 transition-all hover:scale-[1.02]">
+                    <span>➕ เพิ่มวัสดุใหม่</span>
+                </button>
+            </div>
+        </div>
+
+<div id="dashboardModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto p-8">
+        
+<div class="pb-4 border-b border-slate-100 mb-6 relative">
+    <button onclick="AppStore.closeModal('dashboardModal')" class="absolute top-0 right-0 w-9 h-9 bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transition-all z-20">
+        ✕
+    </button>
+
+    <div class="pr-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h3 class="text-xl md:text-2xl font-black text-slate-800 flex items-center gap-2">
+            📊 แดชบอร์ดสรุปวัสดุและมูลค่า (ประจำวัน / เดือน / ปี)
+        </h3>
+        <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="AppStore.exportReceiveExcel()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-1.5 transition-all hover:scale-[1.02]">
+                <i class="fas fa-file-excel"></i> รายงานรับเข้า
+            </button>
+
+            <button onclick="AppStore.exportWithdrawExcel()" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs shadow-md flex items-center gap-1.5 transition-all hover:scale-[1.02]">
+                <i class="fas fa-file-excel"></i> รายงานเบิกออก
+            </button>
+        </div>
+    </div>
+</div>
+        <div class="grid grid-cols-3 gap-2 mb-6 bg-slate-100 p-1.5 rounded-2xl">
+            <button onclick="AppStore.setDashboardScope('day')" id="btnScopeDay" class="py-3 text-xs font-black rounded-xl bg-white text-indigo-600 shadow-sm transition-all">ประจำวัน (วันนี้)</button>
+            <button onclick="AppStore.setDashboardScope('month')" id="btnScopeMonth" class="py-3 text-xs font-black rounded-xl text-slate-500 transition-all">ประจำเดือน (เดือนนี้)</button>
+            <button onclick="AppStore.setDashboardScope('year')" id="btnScopeYear" class="py-3 text-xs font-black rounded-xl text-slate-500 transition-all">ประจำปี (ปีนี้)</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="bg-indigo-50/70 border border-indigo-100 p-5 rounded-2xl">
+                <p class="text-xs text-indigo-600 font-bold uppercase tracking-wider">จำนวนรายการเคลื่อนไหว / คงเหลือ</p>
+                <h4 id="dashTotalQty" class="text-3xl font-black text-indigo-950 mt-1">0 ชิ้น</h4>
+            </div>
+            <div class="bg-emerald-50/70 border border-emerald-100 p-5 rounded-2xl">
+                <p class="text-xs text-emerald-600 font-bold uppercase tracking-wider">มูลค่ารวมสุทธิ (บาท)</p>
+                <h4 id="dashTotalPrice" class="text-3xl font-black text-emerald-950 mt-1">0.00 บาท</h4>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <h5 class="text-xs font-black text-slate-500 uppercase mb-3 text-center">กราฟแสดงจำนวนวัสดุแยกตามหมวดหมู่</h5>
+                <div class="relative h-60">
+                    <canvas id="qtyChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <h5 class="text-xs font-black text-slate-500 uppercase mb-3 text-center">กราฟแสดงมูลค่า (บาท) แยกตามหมวดหมู่</h5>
+                <div class="relative h-60">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <h5 class="text-xs font-black text-slate-700 uppercase">📋 รายละเอียดวัสดุและมูลค่าทั้งหมดในคลัง</h5>
+                <span id="dashItemCount" class="text-xs font-bold text-slate-400">0 รายการ</span>
+            </div>
+            <div class="overflow-x-auto max-h-72">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50/80 sticky top-0 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100">
+                        <tr>
+                            <th class="px-4 py-3">ลำดับ</th>
+                            <th class="px-4 py-3">ชื่อพัสดุ</th>
+                            <th class="px-4 py-3">หมวดหมู่</th>
+                            <th class="px-4 py-3 text-right">คงเหลือ</th>
+                            <th class="px-4 py-3 text-right">ราคา/หน่วย</th>
+                            <th class="px-4 py-3 text-right">มูลค่ารวม (บาท)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashTableBody" class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8 text-center">
+
+            <div onclick="document.getElementById('valuationModal').classList.remove('hidden')" 
+                 class="bg-gradient-to-br from-slate-800 via-slate-950 to-indigo-950 text-white p-4 rounded-2xl shadow-xl border border-slate-700/60 text-left cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xl group relative overflow-hidden col-span-2 md:col-span-2">
+                <div class="absolute inset-0 bg-white/[0.03] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div>
+                    <p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                        <span>มูลค่าคงคลังรวม</span>
+                    </p>
+                    <p class="text-3xl font-black text-yellow-400 mt-1 tracking-tight" id="statGrandValue">0.00 บาท</p>
+                </div>
+                <p class="text-slate-500 text-[8px] mt-3 group-hover:text-slate-400 transition-colors">💡 คลิกดูแยกหมวดหมู่</p>
+            </div>
+
+            <div onclick="AppStore.setStatFilter('all'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">ทั้งหมด</p>
+                <p id="stat-total" class="text-3xl font-black text-slate-800">0</p>
+            </div>
+            
+            <div onclick="AppStore.setStatFilter('out'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-rose-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-rose-500 uppercase mb-1">พัสดุหมด!</p>
+                <p id="stat-out" class="text-3xl font-black text-rose-600">0</p>
+            </div>
+            
+            <div onclick="AppStore.setStatFilter('low'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-amber-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-amber-500 uppercase mb-1">ใกล้หมด</p>
+                <p id="stat-low" class="text-3xl font-black text-amber-500">0</p>
+            </div>
+            
+            <div onclick="AppStore.setStatFilter('today-in'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-emerald-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-emerald-500 uppercase mb-1">รับวันนี้</p>
+                <p id="stat-in-today" class="text-3xl font-black text-emerald-500">0</p>
+            </div>
+            
+            <div onclick="AppStore.setStatFilter('today-out'); document.getElementById('inventory-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-500 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                <p class="text-[10px] font-black text-indigo-500 uppercase mb-1">เบิกวันนี้</p>
+                <p id="stat-out-today" class="text-3xl font-black text-indigo-500">0</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 pb-12">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row gap-3 mb-6 shadow-sm">
+            <input type="text" id="searchInput" oninput="AppStore.render()" placeholder="🔍 ค้นหาชื่อพัสดุ..." class="w-full sm:flex-1 px-4 py-3 bg-slate-50 rounded-xl text-sm font-bold outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all">
+            
+            <select id="filterCategory" onchange="AppStore.render()" class="w-full sm:w-48 px-4 py-3 bg-white text-slate-800 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer transition-all">
+                <option value="all">ทุกหมวดหมู่</option>
+            </select>
+        </div>
+          
+        <div id="inventory-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+        <div id="empty-state" class="py-24 text-center border-2 border-dashed border-slate-200 rounded-[3rem] hidden bg-slate-50/50">📦 ไม่พบข้อมูล</div>
+
+        <div class="mt-12 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-2xl">📜</span>
+                <h3 class="text-lg font-black text-slate-800">ประวัติกิจกรรมล่าสุด (100 รายการล่าสุด)</h3>
+            </div>
+
+            <div class="overflow-x-auto rounded-2xl border border-slate-100">
+                <table class="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-black uppercase text-slate-400">
+                            <th class="px-6 py-4">วัน-เวลา</th>
+                            <th class="px-6 py-4">รายการพัสดุ</th>
+                            <th class="px-6 py-4 text-center">กิจกรรม</th>
+                            <th class="px-6 py-4 text-right">จำนวน</th>
+                            <th class="px-6 py-4">ผู้ทำรายการ</th>
+                            <th class="px-4 py-3 text-right">ราคาต่อหน่วย</th>
+                            <th class="px-4 py-3 text-right">ราคารวม</th>
+                            <th class="px-6 py-4">หมายเหตุ</th> 
+                        </tr>
+                    </thead>
+                    <tbody id="history-list" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="itemModal" class="modal-overlay fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] p-10 w-full max-w-lg shadow-2xl">
+        <h3 id="modalTitle" class="text-2xl font-black mb-8 text-slate-800 uppercase">จัดการพัสดุ</h3><input type="hidden" id="editId">
+        <div class="space-y-4 text-left">
+            <div><label class="text-[10px] font-black text-slate-400 uppercase ml-1">ชื่อพัสดุ</label><input type="text" id="itemName" class="w-full p-4 bg-slate-50 border rounded-xl font-bold outline-none focus:border-indigo-400"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] font-black text-slate-400 uppercase ml-1">จำนวน</label><input type="number" id="itemQty" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></div>
+                <div><label class="text-[10px] font-black text-slate-400 uppercase ml-1">หน่วยนับ</label><input type="text" id="itemUnit" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] font-black text-slate-400 uppercase ml-1">หมวดหมู่</label><select id="itemCat" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></select></div>
+                <div><label class="text-[10px] font-black text-rose-400 uppercase ml-1">แจ้งเตือนขั้นต่ำ</label><input type="number" id="itemMin" value="5" class="w-full p-4 bg-slate-50 border rounded-xl font-bold"></div>
+            </div>
+            <div>
+                 <label class="block text-sm font-semibold text-slate-700 mb-1">ราคาต่อหน่วย (บาท)</label>
+                 <input type="number" id="itemPrice" step="0.01" min="0" value="0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-1">หมายเหตุการจัดการพัสดุ</label>
+                <input type="text" id="itemRemark" placeholder="เช่น ปรับปรุงยอดประจำปี, เปลี่ยนชื่อเรียกให้ถูกต้อง..." class="w-full p-4 bg-slate-50 border rounded-xl font-bold text-xs outline-none focus:border-indigo-400 mt-1">
+            </div>
+        </div>
+        <div class="flex gap-4 mt-10"><button onclick="AppStore.closeModal('itemModal')" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600">ยกเลิก</button><button onclick="AppStore.saveItem()" class="flex-1 py-4 btn-primary text-white rounded-2xl font-black shadow-lg">บันทึกวัสดุ</button></div>
+    </div>
+</div>
+
+<div id="actionModal" class="modal-overlay fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl">
+        <p id="actionLabel" class="text-[10px] font-black text-slate-400 uppercase mb-2"></p>
+        <h3 id="actionItemName" class="text-2xl font-black text-slate-800 mb-6 truncate"></h3>
+        
+        <input type="number" id="actionAmount" class="w-full p-6 bg-slate-50 border-2 rounded-3xl text-5xl font-black text-center text-indigo-600 outline-none mb-4" placeholder="0">
+        
+        <div class="mb-6 text-left">
+            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">หมายเหตุ / เหตุผลการเบิก</label>
+            <input type="text" id="actionRemark" placeholder="เช่น ใช้ในโครงการ, มอบให้ อสม..." class="w-full p-3.5 bg-slate-50 border rounded-xl font-bold text-xs outline-none focus:border-indigo-400 mt-1">
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="AppStore.closeModal('actionModal')" class="flex-1 py-4 text-slate-400 font-bold hover:text-slate-600">ยกเลิก</button>
+            <button id="confirmActionBtn" onclick="AppStore.confirmAction()" class="flex-1 py-4 text-white rounded-2xl font-black shadow-lg uppercase text-xs tracking-widest"></button>
+        </div>
+    </div>
+</div>
+
+<div id="categoryModal" class="modal-overlay fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl">
+        <h3 class="text-2xl font-black mb-6 text-slate-800">เพิ่มหมวดหมู่&Backup</h3>
+        <div class="mb-6 p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex gap-3">
+            <button onclick="AppStore.exportBackup()" class="flex-1 py-3 bg-white border text-indigo-600 rounded-xl text-[10px] font-black uppercase shadow-sm">💾 Backup</button>
+            <label class="flex-1 py-3 bg-white border text-indigo-600 rounded-xl text-[10px] font-black uppercase text-center cursor-pointer shadow-sm">📂 Import<input type="file" class="hidden" accept=".json" onchange="AppStore.importBackup(this)"></label>
+        </div>
+        <div class="space-y-4 text-left">
+            <div class="flex gap-2 mb-4"><input type="text" id="newCatInput" placeholder="หมวดหมู่ใหม่..." class="flex-1 p-4 bg-slate-50 border rounded-xl font-bold text-sm outline-none"><button onclick="AppStore.addCat()" class="px-5 py-4 btn-primary text-white rounded-xl font-bold text-xs uppercase shadow-md">เพิ่ม</button></div>
+            <div id="cat-list" class="space-y-2 max-h-48 overflow-y-auto pr-2"></div>
+        </div>
+        <button onclick="AppStore.closeModal('categoryModal')" class="w-full mt-8 py-4 bg-slate-100 rounded-2xl font-black text-slate-400 uppercase text-xs">ปิด</button>
+    </div>
+</div>
+
+<div id="confirmDeleteModal" class="modal-overlay fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl border-b-8 border-rose-500">
+        <div class="text-5xl mb-4">🗑️</div>
+        <h3 class="text-xl font-black text-slate-800 mb-2">ยืนยันการลบ?</h3>
+        <p class="text-slate-500 text-sm mb-6 text-center">คุณต้องการลบพัสดุ <br><span id="deleteItemName" class="font-black text-rose-600 underline text-lg"></span><br> ใช่หรือไม่?</p>
+        <div class="space-y-3">
+            <button onclick="AppStore.executeDelete()" class="w-full py-4 bg-rose-500 text-white rounded-2xl font-black shadow-lg hover:bg-rose-600 transition-all">ยืนยัน ลบทิ้ง</button>
+            <button onclick="AppStore.closeModal('confirmDeleteModal')" class="w-full py-3 text-slate-400 font-bold hover:text-slate-600">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<div id="valuationModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-5 w-full max-w-4xl mx-4 max-h-[85vh] flex flex-col">
+        <div class="flex justify-between items-center border-b pb-3 mb-4 shrink-0">
+            <h3 class="font-black text-slate-800 text-sm flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                <span>📊 สรุปมูลค่าวัสดุคงเหลือแยกตามหมวดหมู่</span>
+            </h3>
+            <button onclick="document.getElementById('valuationModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 font-bold text-sm bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors">✕ ปิด</button>
+        </div>
+        <div class="overflow-y-auto pb-2">
+            <div id="categorySummaryContainer"></div>
+        </div>
+    </div>
+</div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAd7xCHaKXUBtam9I3bDDd3JSKk0EOxsho",
+        authDomain: "mystockapp-ab21b.firebaseapp.com",
+        projectId: "mystockapp-ab21b",
+        storageBucket: "mystockapp-ab21b.firebasestorage.app",
+        messagingSenderId: "1063086099094",
+        appId: "1:1063086099094:web:4047b82b9ee0166febd0b7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    
+    const db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager()
+        })
+    });
+
+    const appId = 'stock-v11-9-9';
+    const userRegistryRef = doc(db, 'artifacts', appId, 'auth', 'userRegistry');
+
+    let state = { 
+        inventory: [], 
+        categories: ["ทั่วไป"], 
+        history: [], 
+        currentUser: null, 
+        currentOrg: null, 
+        authMode: 'login', 
+        deleteTarget: null,
+        currentStatFilter: 'all'
+    };
+    let activeDocRef = null;
+
+    const store = (() => {
+        async function init() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('service-worker.js')
+                .then(() => console.log('Service Worker Registered Successfully!'))
+                .catch(err => console.log('Service Worker Registration Failed:', err));
+            }
+
+            const savedUser = localStorage.getItem('currentUser');
+            const savedOrg = localStorage.getItem('currentOrg');
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user && savedUser && savedOrg) {
+                    state.currentUser = savedUser;
+                    state.currentOrg = savedOrg;
+                    const authScreen = document.getElementById('auth-screen');
+                    if (authScreen) authScreen.classList.add('hidden');
+                    startApp(savedUser, savedOrg);
+                } else {
+                    const authScreen = document.getElementById('auth-screen');
+                    if (authScreen) authScreen.classList.remove('hidden');
+                }
+            });
+        }
+
+        function startApp(username, org) {
+            state.currentUser = username; state.currentOrg = org;
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('user-display').innerText = `${username} (${org})`;
+            activeDocRef = doc(db, 'artifacts', appId, 'organizations', org, 'state', 'main');
+            onSnapshot(activeDocRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    state.inventory = data.inventory || [];
+                    state.categories = data.categories || ["ทั่วไป"];
+                    state.history = data.history || [];
+                    updateUI(); setSyncStatus('online');
+                } else persist();
+            }, (error) => {
+                console.log("Firestore offline mode active:", error);
+                setSyncStatus('offline');
+            });
+        }
+
+        async function persist() {
+            if (!activeDocRef) return;
+            try {
+                await setDoc(activeDocRef, { inventory: state.inventory, categories: state.categories, history: state.history, orgName: state.currentOrg }, { merge: true });
+                setSyncStatus('online');
+            } catch(e) {
+                console.log("Data cached locally. Will sync when online.");
+                setSyncStatus('offline');
+            }
+        }
+
+        function updateUI() {
+           updateStats();
+           renderInventory();
+           renderHistory();
+           renderCats();
+        }
+
+        function updateStats() {
+            const today = new Date().toDateString();
+            const histToday = state.history.filter(h => new Date(h.timestamp).toDateString() === today);
+            
+            const totalItems = state.inventory.length;
+            const outOfStockItems = state.inventory.filter(i => parseInt(i.stock) <= 0).length;
+            const lowStockItems = state.inventory.filter(i => parseInt(i.stock) > 0 && parseInt(i.stock) <= (parseInt(i.min) || 5)).length;
+            
+            const inTodayCount = histToday.filter(h => h.type === 'in').length;
+            const outTodayCount = histToday.filter(h => h.type === 'out').length;
+
+            if (document.getElementById('stat-total')) document.getElementById('stat-total').innerText = totalItems;
+            if (document.getElementById('stat-out')) document.getElementById('stat-out').innerText = outOfStockItems;
+            if (document.getElementById('stat-low')) document.getElementById('stat-low').innerText = lowStockItems;
+            if (document.getElementById('stat-in-today')) document.getElementById('stat-in-today').innerText = inTodayCount;
+            if (document.getElementById('stat-out-today')) document.getElementById('stat-out-today').innerText = outTodayCount;
+        }
+
+        function renderInventory() {
+            const list = document.getElementById('inventory-list');
+            const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const catF = document.getElementById('filterCategory')?.value || 'all';
+            const today = new Date().toDateString();
+
+            const filtered = state.inventory.filter(i => {
+                const sMatch = i.name.toLowerCase().includes(search);
+                const cMatch = (catF === 'all' || i.category === catF);
+                
+                let statMatch = true;
+                if (state.currentStatFilter === 'out') statMatch = i.stock <= 0;
+                if (state.currentStatFilter === 'low') statMatch = i.stock > 0 && i.stock <= (i.min || 5);
+                if (state.currentStatFilter === 'today-in') {
+                    statMatch = state.history.some(h => new Date(h.timestamp).toDateString() === today && h.type === 'in' && h.item.toLowerCase() === i.name.toLowerCase());
+                }
+                if (state.currentStatFilter === 'today-out') {
+                    statMatch = state.history.some(h => new Date(h.timestamp).toDateString() === today && h.type === 'out' && h.item.toLowerCase() === i.name.toLowerCase());
+                }
+
+                return sMatch && cMatch && statMatch;
+            });
+
+            let grandTotalVal = 0;
+            const categoryValuations = {};
+            if (state.categories) {
+                state.categories.forEach(c => categoryValuations[c] = 0);
+            }
+
+            if (filtered.length === 0) { 
+                list.innerHTML = ''; 
+                document.getElementById('empty-state').classList.remove('hidden'); 
+                
+                const statGrandEl = document.getElementById('statGrandValue');
+                if (statGrandEl) statGrandEl.innerText = '0.00 บาท';
+                
+                const catContainer = document.getElementById('categorySummaryContainer');
+                if (catContainer) {
+                    catContainer.innerHTML = `
+                        <div class="col-span-full bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                            <span class="text-xs font-bold text-slate-400">🔍 ไม่พบข้อมูลมูลค่าคงเหลือในหมวดหมู่นี้</span>
+                        </div>`;
+                }
+                return; 
+            }
+            document.getElementById('empty-state').classList.add('hidden');
+            
+            list.innerHTML = filtered.map(item => {
+                const price = parseFloat(item.price) || 0;
+                const qty = parseFloat(item.stock) || 0;
+                const totalPrice = qty * price;
+                
+                grandTotalVal += totalPrice;
+                if (categoryValuations[item.category] !== undefined) {
+                    categoryValuations[item.category] += totalPrice;
+                }
+
+                return `
+                <div class="stock-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[9px] font-black uppercase px-2 py-1 bg-indigo-50 text-indigo-500 rounded-lg">${item.category}</span>
+                        <div class="flex gap-1">
+                            <button onclick="AppStore.editItem('${item.id}')" class="p-1.5 text-slate-300 hover:text-indigo-500">✏️</button>
+                            <button onclick="AppStore.requestDelete('${item.id}')" class="p-1.5 text-slate-300 hover:text-rose-500">🗑️</button>
+                        </div>
+                    </div>
+                    <h4 class="font-bold text-slate-800 my-4 truncate" title="${item.name}">${item.name}</h4>
+                    <div class="${item.stock <= 0 ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-100'} p-4 rounded-xl border mb-4 text-center">
+                        <span class="text-3xl font-black ${item.stock <= 0 ? 'text-rose-600' : (item.stock <= (item.min || 5) ? 'text-amber-500' : 'text-slate-800')}">${item.stock}</span>
+                        <span class="text-xs font-bold text-slate-400">${item.unit}</span>
+                        ${item.stock <= 0 ? '<p class="text-[9px] font-black text-rose-500 uppercase mt-1 out-of-stock-animate">⚠️ พัสดุหมด</p>' : ''}
+                    </div>
+
+                    <div class="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 mb-4 text-xs space-y-1">
+                        <div class="flex justify-between text-slate-500 font-medium">
+                            <span>ราคาต่อหน่วย:</span>
+                            <span class="font-bold text-slate-700">${price.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span>
+                        </div>
+                        <div class="flex justify-between text-slate-500 font-medium">
+                            <span>มูลค่าคงคลัง:</span>
+                            <span class="font-black text-indigo-600">${totalPrice.toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="AppStore.openAction('${item.id}', 'out')" class="py-2 bg-rose-500 text-white rounded-lg text-[10px] font-black uppercase shadow-md">เบิกออก</button>
+                        <button onclick="AppStore.openAction('${item.id}', 'in')" class="py-2 bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase shadow-md">รับเข้า</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            const statGrandEl = document.getElementById('statGrandValue');
+            if (statGrandEl) {
+                statGrandEl.innerText = grandTotalVal.toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' บาท';
+            }
+
+            const catContainer = document.getElementById('categorySummaryContainer');
+            if (catContainer) {
+                let catHtml = '';
+                Object.keys(categoryValuations).forEach(cat => {
+                    catHtml += `
+                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
+                            <span class="truncate font-bold text-slate-500" title="${cat}">${cat}:</span>
+                            <span class="font-black text-slate-800 whitespace-nowrap">${categoryValuations[cat].toLocaleString('th-TH', {minimumFractionDigits: 2})} บ.</span>
+                        </div>`;
+                });
+                catContainer.innerHTML = catHtml;
+            }
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('history-list');
+            if (!tbody) return;
+            const itemsToShow = state.history.slice(0, 100);
+            tbody.innerHTML = itemsToShow.map(h => {
+                const price = parseFloat(h.price) || 0;
+                const amt = parseFloat(h.amount) || 0;
+                const total = amt * price;
+                
+                let badge = '';
+                if (h.action_text === 'ลบหมวดหมู่') {
+                    badge = '<span class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-md font-bold text-[10px]">🗑️ ลบหมวดหมู่</span>';
+                } else if(h.type === 'in' && h.action_text === 'บวกยอดสะสม') {
+                    badge = '<span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md font-bold text-[10px]">📥 ซ้ำ/บวกสะสม</span>';
+                } else if(h.type === 'in') {
+                    badge = '<span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-md font-bold text-[10px]">📥 รับเข้า</span>';
+                } else if(h.type === 'out') {
+                    badge = '<span class="px-2.5 py-1 bg-rose-50 text-rose-600 rounded-md font-bold text-[10px]">📤 เบิกออก</span>';
+                } else if(h.type === 'create') {
+                    badge = '<span class="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-md font-bold text-[10px]">✨ เพิ่มใหม่</span>';
+                } else if(h.type === 'add_category') {
+                    badge = '<span class="px-2.5 py-1 bg-purple-50 text-purple-600 rounded-md font-bold text-[10px]">📁 เพิ่มหมวดหมู่</span>';
+                } else if(h.type === 'delete') {
+                    badge = '<span class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-md font-bold text-[10px]">🗑️ ลบวัสดุ</span>';
+                } else {
+                    badge = '<span class="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-md font-bold text-[10px]">📝 แก้ไข</span>';
+                }
+
+                let dStr = '-';
+                if(h.timestamp) {
+                    try { dStr = new Date(h.timestamp).toLocaleString('th-TH'); } catch(e){}
+                }
+
+                return `
+                <tr class="text-xs font-semibold text-slate-600 hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap font-medium text-slate-400">${dStr}</td>
+                    <td class="px-6 py-4 font-bold text-slate-800">${h.item}</td>
+                    <td class="px-6 py-4 text-center">${badge}</td>
+                    <td class="px-6 py-4 text-right font-black ${amt > 0 ? (h.type==='in'?'text-emerald-500':'text-rose-500'):'text-slate-400'}">${amt}</td>
+                    <td class="px-6 py-4 font-bold text-slate-500">${h.user || '-'}</td>
+                    <td class="px-4 py-3 text-right text-slate-500">${price.toLocaleString('th-TH', {minimumFractionDigits:2})} บ.</td>
+                    <td class="px-4 py-3 text-right font-bold text-slate-700">${total.toLocaleString('th-TH', {minimumFractionDigits:2})} บ.</td>
+                    <td class="px-6 py-4 text-slate-400 text-[11px] font-normal max-w-[200px] truncate" title="${h.remark || ''}">${h.remark || '-'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderCats() {
+            const filterSelect = document.getElementById('filterCategory');
+            const itemCatSelect = document.getElementById('itemCat');
+            const catListDiv = document.getElementById('cat-list');
+            
+            const currentFilterVal = filterSelect ? filterSelect.value : 'all';
+            const currentItemCatVal = itemCatSelect ? itemCatSelect.value : '';
+
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="all">ทุกหมวดหมู่</option>' + 
+                    state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+                filterSelect.value = currentFilterVal;
+            }
+            if (itemCatSelect) {
+                itemCatSelect.innerHTML = state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+                if (currentItemCatVal && state.categories.includes(currentItemCatVal)) {
+                    itemCatSelect.value = currentItemCatVal;
+                }
+            }
+            if (catListDiv) {
+                catListDiv.innerHTML = state.categories.map(c => `
+                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border">
+                        <span class="text-xs font-bold text-slate-700">${c}</span>
+                        ${c !== 'ทั่วไป' ? `<button onclick="AppStore.removeCatClick('${c}')" class="text-rose-500 font-bold text-xs hover:underline">ลบ</button>` : ''}
+                    </div>`).join('');
+            }
+        }
+
+        function setSyncStatus(status) {
+            const dot = document.getElementById('sync-dot');
+            if(!dot) return;
+            if(status === 'online') {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 sync-pulse';
+                dot.nextElementSibling.innerText = 'Online';
+            } else {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
+                dot.nextElementSibling.innerText = 'Offline Mode';
+            }
+        }
+
+        async function forgotPassword() {
+            const email = document.getElementById('auth-email').value.trim();
+            if(!email) { alert('กรุณากรอกอีเมลในช่องด้านบนก่อนกดลืมรหัสผ่าน'); return; }
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert('ระบบได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยังอีเมลของท่านแล้ว โปรดตรวจสอบกล่องข้อความพัสดุเข้า (รวมถึงกล่องจดหมายขยะ/Spam)');
+            } catch(err) {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        }
+
+        return {
+            init: init,
+            switchAuth: (mode) => {
+                state.authMode = mode;
+                const loginBtn = document.getElementById('tab-login');
+                const regBtn = document.getElementById('tab-register');
+                const nameWrp = document.getElementById('name-wrapper');
+                const orgWrp = document.getElementById('org-selection-wrapper');
+                const authBtn = document.getElementById('auth-btn');
+                const forgotWrp = document.getElementById('forgot-password-wrapper');
+
+                if(mode === 'login') {
+                    loginBtn.className = "flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600";
+                    regBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400";
+                    nameWrp.style.display = 'none';
+                    orgWrp.style.display = 'none';
+                    forgotWrp.style.display = 'block';
+                    authBtn.innerText = 'เข้าสู่ระบบ';
+                } else {
+                    regBtn.className = "flex-1 py-2.5 text-xs font-black rounded-lg bg-white shadow text-indigo-600";
+                    loginBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-400";
+                    nameWrp.style.display = 'block';
+                    orgWrp.style.display = 'block';
+                    forgotWrp.style.display = 'none';
+                    authBtn.innerText = 'ลงทะเบียนระบบคลัง';
+                }
+            },
+            handleAuth: async () => {
+                const email = document.getElementById('auth-email').value.trim();
+                const pass = document.getElementById('auth-pass').value;
+                const name = document.getElementById('auth-name').value.trim();
+                const org = document.getElementById('orgName').value;
+
+                if(!email || !pass) { alert('กรุณากรอกข้อมูลให้ครบถ้วน'); return; }
+
+                try {
+                    if(state.authMode === 'register') {
+                        if(!name || !org) { alert('กรุณากรอกชื่อและเลือกหน่วยงานสังกัด'); return; }
+                        const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+                        
+                        let registry = {};
+                        try {
+                            const currentRegistrySnap = await getDoc(userRegistryRef);
+                            if(currentRegistrySnap.exists()) registry = currentRegistrySnap.data().users || {};
+                        } catch(e){}
+                        
+                        registry[email.toLowerCase().replace(/\./g, '_')] = { name: name, org: org };
+                        await setDoc(userRegistryRef, { users: registry }, { merge: true });
+
+                        localStorage.setItem('currentUser', name);
+                        localStorage.setItem('currentOrg', org);
+                        startApp(name, org);
+                    } else {
+                        const userCred = await signInWithEmailAndPassword(auth, email, pass);
+                        const registrySnap = await getDoc(userRegistryRef);
+                        if(registrySnap.exists()) {
+                            const uData = registrySnap.data().users?.[email.toLowerCase().replace(/\./g, '_')];
+                            if(uData) {
+                                localStorage.setItem('currentUser', uData.name);
+                                localStorage.setItem('currentOrg', uData.org);
+                                startApp(uData.name, uData.org);
+                                return;
+                            }
+                        }
+                        alert('ไม่พบข้อมูลหน่วยงานสังกัดของบัญชีนี้ กรุณาติดต่อผู้ดูแลระบบ');
+                    }
+                } catch(err) {
+                    alert('เกิดข้อผิดพลาด: ' + err.message);
+                }
+            },
+            logout: () => {
+                auth.signOut();
+                localStorage.clear();
+                state.currentUser = null; state.currentOrg = null; activeDocRef = null;
+                document.getElementById('main-app').classList.add('hidden');
+                document.getElementById('auth-screen').classList.remove('hidden');
+            },
+            render: () => { renderInventory(); },
+            setStatFilter: (filterType) => {
+                state.currentStatFilter = filterType;
+                renderInventory();
+            },
+            openItemModal: () => {
+                document.getElementById('modalTitle').innerText = 'เพิ่มพัสดุใหม่';
+                document.getElementById('editId').value = '';
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemQty').value = '0';
+                document.getElementById('itemQty').disabled = false;
+                document.getElementById('itemUnit').value = 'ชิ้น';
+                document.getElementById('itemMin').value = '5';
+                document.getElementById('itemPrice').value = '0';
+                document.getElementById('itemRemark').value = '';
+                renderCats();
+                document.getElementById('itemModal').classList.remove('hidden');
+            },
+            editItem: (id) => {
+                const item = state.inventory.find(i => i.id === id);
+                if(!item) return;
+                document.getElementById('modalTitle').innerText = 'แก้ไขพัสดุ';
+                document.getElementById('editId').value = item.id;
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('itemQty').value = item.stock;
+                document.getElementById('itemQty').disabled = true;
+                document.getElementById('itemUnit').value = item.unit || 'ชิ้น';
+                document.getElementById('itemMin').value = item.min || '5';
+                document.getElementById('itemPrice').value = item.price || '0';
+                document.getElementById('itemRemark').value = '';
+                renderCats();
+                document.getElementById('itemCat').value = item.category || 'ทั่วไป';
+                document.getElementById('itemModal').classList.remove('hidden');
+            },
+            closeModal: (mid) => { document.getElementById(mid).classList.add('hidden'); },
+            saveItem: async () => {
+                const id = document.getElementById('editId').value;
+                const name = document.getElementById('itemName').value.trim();
+                const qty = parseInt(document.getElementById('itemQty').value) || 0;
+                const price = parseFloat(document.getElementById('itemPrice').value) || 0; 
+                const unit = document.getElementById('itemUnit').value.trim() || 'ชิ้น';
+                const cat = document.getElementById('itemCat').value;
+                const min = parseInt(document.getElementById('itemMin').value) || 5;
+                const remark = document.getElementById('itemRemark').value.trim() || "-";
+
+                if(!name) return alert('กรุณากรอกชื่อวัสดุ');
+
+                const existing = state.inventory.find(x => x.name.trim().toLowerCase() === name.toLowerCase());
+
+                if (id) {
+                    const idx = state.inventory.findIndex(x => x.id === id);
+                    state.inventory[idx] = { ...state.inventory[idx], name, price: price, unit, category: cat, min };
+                    state.history.unshift({ item: name, type: 'edit', action_text: 'แก้ไขวัสดุ', user: state.currentUser, timestamp: new Date().toISOString(), amount: qty, price: price, remark: remark });
+                } else if (existing) {
+                    existing.stock = (parseInt(existing.stock) || 0) + qty;
+                    existing.price = price; 
+                    state.history.unshift({ item: existing.name, type: 'in', action_text: 'บวกยอดสะสม', amount: qty, price: price, user: state.currentUser, timestamp: new Date().toISOString(), remark: remark });
+                    alert(`📥 พบชื่อวัสดุซ้ำระบบทำการบวกยอดสะสมเข้าไปในรายการ "${existing.name}" เดิมให้เรียบร้อยแล้วครับ`);
+                } else {
+                    state.inventory.push({ id: 'ITM-'+Date.now(), name, stock: qty, price: price, unit, category: cat, min });
+                    state.history.unshift({ item: name, type: 'create', action_text: 'เพิ่มใหม่', amount: qty, price: price, user: state.currentUser, timestamp: new Date().toISOString(), remark: remark });
+                }
+                
+                await persist();
+                
+                document.getElementById('editId').value = '';
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemQty').value = '0';
+                document.getElementById('itemPrice').value = '0';
+                document.getElementById('itemRemark').value = '';
+                
+                document.getElementById('itemModal').classList.add('hidden');
+            },
+            requestDelete: (id) => {
+                const item = state.inventory.find(i => i.id === id);
+                if(!item) return;
+                state.deleteTarget = id;
+                document.getElementById('deleteItemName').innerText = item.name;
+                document.getElementById('confirmDeleteModal').classList.remove('hidden');
+            },
+            executeDelete: async () => {
+                if(!state.deleteTarget) return;
+                const id = state.deleteTarget;
+                const item = state.inventory.find(i => i.id === id);
+                if(item) {
+                    state.inventory = state.inventory.filter(i => i.id !== id);
+                    state.history.unshift({
+                        item: item.name, type: 'delete', amount: item.stock, price: item.price || 0, user: state.currentUser,
+                        timestamp: new Date().toISOString(), remark: `ลบรายการวัสดุออกจากระบบถาวร (ยอดคงเหลือเดิม: ${item.stock})`
+                    });
+                }
+                state.deleteTarget = null;
+                document.getElementById('confirmDeleteModal').className = 'modal-overlay fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4';
+                await persist();
+            },
+            openAction: (id, type) => {
+                const item = state.inventory.find(i => i.id === id);
+                if(!item) return;
+                document.getElementById('actionLabel').innerText = type === 'in' ? '📥 รับพัสดุเข้าคลัง' : '📤 เบิกพัสดุออกจากคลัง';
+                document.getElementById('actionItemName').innerText = item.name;
+                document.getElementById('actionAmount').value = '';
+                document.getElementById('actionRemark').value = '';
+                
+                const btn = document.getElementById('confirmActionBtn');
+                btn.className = `flex-1 py-4 text-white rounded-2xl font-black shadow-lg text-xs tracking-widest ${type==='in'?'bg-emerald-500':'bg-rose-500'}`;
+                btn.innerText = type === 'in' ? 'ยืนยันรับเข้า' : 'ยืนยันการเบิก';
+                btn.setAttribute('data-id', id);
+                btn.setAttribute('data-type', type);
+
+                document.getElementById('actionModal').classList.remove('hidden');
+                setTimeout(() => document.getElementById('actionAmount').focus(), 200);
+            },
+            confirmAction: async () => {
+                const btn = document.getElementById('confirmActionBtn');
+                const id = btn.getAttribute('data-id');
+                const type = btn.getAttribute('data-type');
+                const amt = parseInt(document.getElementById('actionAmount').value) || 0;
+                const rMark = document.getElementById('actionRemark').value.trim();
+
+                if(amt <= 0) { alert('กรุณากรอกจำนวนที่ถูกต้อง'); return; }
+
+                const idx = state.inventory.findIndex(i => i.id === id);
+                if(idx === -1) return;
+                const item = state.inventory[idx];
+
+                if(type === 'out' && parseInt(item.stock) < amt) {
+                    alert(`วัสดุในคลังมีไม่เพียงพอสำหรับการเบิกพัสดุ (คงเหลือยอด: ${item.stock})`);
+                    return;
+                }
+
+                const change = type === 'in' ? amt : -amt;
+                item.stock = parseInt(item.stock) + change;
+
+                state.history.unshift({
+                    item: item.name, type: type, amount: amt, price: item.price || 0, user: state.currentUser,
+                    timestamp: new Date().toISOString(), remark: rMark || (type === 'in' ? 'รับพัสดุเข้าคลังทั่วไป' : 'เบิกวัสดุใช้งานทั่วไป')
+                });
+
+                document.getElementById('actionModal').classList.add('hidden');
+                await persist();
+            },
+            openCategoryModal: () => { renderCats(); document.getElementById('categoryModal').classList.remove('hidden'); },
+            addCat: async () => {
+                const inp = document.getElementById('newCatInput');
+                const val = inp.value.trim();
+                if(!val || state.categories.includes(val)) return;
+                
+                state.categories.push(val);
+                
+                state.history.unshift({
+                    item: `หมวดหมู่: ${val}`,
+                    type: 'add_category',
+                    amount: 0,
+                    price: 0,
+                    user: state.currentUser,
+                    timestamp: new Date().toISOString(),
+                    remark: 'เพิ่มหมวดหมู่ใหม่ในระบบ'
+                });
+                
+                inp.value = '';
+                await persist();
+            },
+            deleteCat: async (cat) => {
+                if(cat === 'ทั่วไป') return;
+                if(confirm(`คุณต้องการลบหมวดหมู่ "${cat}" ใช่หรือไม่?\n(พัสดุที่อยู่ในหมวดหมู่นี้จะถูกเปลี่ยนเป็นกลุ่ม "ทั่วไป")`)) {
+                    state.categories = state.categories.filter(c => c !== cat);
+                    state.inventory.forEach(i => { if(i.category === cat) i.category = 'ทั่วไป'; });
+                    await persist();
+                }
+            },
+            exportBackup: () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+                const dlAnchorElem = document.createElement('a');
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", `STOCK_BACKUP_${state.currentOrg}_${new Date().toISOString().slice(0,10)}.json`);
+                dlAnchorElem.click();
+            },
+            importBackup: (input) => {
+                const file = input.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if(imported.inventory && imported.categories) {
+                            if(confirm('ต้องการเขียนทับข้อมูลคลังปัจจุบันด้วยไฟล์สำรองนี้ใช่หรือไม่?')) {
+                                state.inventory = imported.inventory;
+                                state.categories = imported.categories;
+                                state.history = imported.history || [];
+                                await persist();
+                                alert('นำเข้าข้อมูลสำรองคลังวัสดุเสร็จสิ้น!');
+                                document.getElementById('categoryModal').classList.add('hidden');
+                            }
+                        } else alert('รูปแบบไฟล์ไม่ถูกต้อง');
+                    } catch(err) { alert('เกิดข้อผิดพลาดในการอ่านไฟล์'); }
+                };
+                reader.readAsText(file);
+            },
+        triggerExport: () => {
+            if (!state.inventory || state.inventory.length === 0) {
+                return alert('ไม่มีข้อมูลพัสดุสำหรับออกรายงาน');
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            const formatAndStyleSheet = (ws) => {
+                if (!ws || !ws['!ref']) return;
+                
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                const colWidths = [];
+                
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    let maxLen = 4; 
+                    for (let R = range.s.r; R <= range.e.r; ++R) {
+                        const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
+                        const cell = ws[cell_ref];
+                        if (cell && cell.v) {
+                            const valStr = cell.v.toString();
+                            const len = valStr.match(/[ก-าพ-ะ]/g) ? valStr.length * 1.25 : valStr.length;
+                            if (len > maxLen) maxLen = len;
+                        }
+                    }
+                    
+                    if (C === 0) {
+                        colWidths.push({ wch: 6 });
+                    } else {
+                        colWidths.push({ wch: Math.min(Math.max(maxLen + 2, 8), 35) });
+                    }
+                }
+                ws['!cols'] = colWidths;
+
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const header_ref = XLSX.utils.encode_cell({ c: C, r: 0 });
+                    const header_cell = ws[header_ref];
+                    const header_title = header_cell ? header_cell.v.toString() : '';
+
+                    for (let R = 1; R <= range.e.r; ++R) {
+                        const data_ref = XLSX.utils.encode_cell({ c: C, r: R });
+                        const data_cell = ws[data_ref];
+                        
+                        if (data_cell) {
+                            if (C === 0) {
+                                data_cell.z = '0';
+                            }
+                            else if (typeof data_cell.v === 'number' && (header_title.includes('บาท') || header_title.includes('ราคา') || header_title.includes('รวม'))) {
+                                data_cell.z = '#,##0.00'; 
+                            }
+                            else if (typeof data_cell.v === 'number' && (header_title.includes('คงเหลือ') || header_title.includes('จำนวน') || header_title.includes('ขั้นต่ำ'))) {
+                                data_cell.z = '#,##0';
+                            }
+                        }
+                    }
+                }
+            };
+
+            const allData = state.inventory.map((x, index) => ({
+                'ลำดับ': index + 1,
+                'ชื่อวัสดุ/พัสดุ': x.name,
+                'หมวดหมู่': x.category || 'ทั่วไป',
+                'คงเหลือ': parseInt(x.stock) || 0,
+                'หน่วยนับ': x.unit || 'ชิ้น',
+                'ราคาต่อหน่วย (บาท)': parseFloat(x.price) || 0,
+                'มูลค่ารวม (บาท)': (parseInt(x.stock) || 0) * (parseFloat(x.price) || 0),
+                'เกณฑ์ขั้นต่ำ': parseInt(x.min) || 5,
+                'สถานะ': (parseInt(x.stock) || 0) <= 0 ? 'สินค้าหมด' : ((parseInt(x.stock) || 0) <= (parseInt(x.min) || 5) ? 'ใกล้หมด' : 'ปกติ')
+            }));
+            const wsAll = XLSX.utils.json_to_sheet(allData);
+            formatAndStyleSheet(wsAll);
+            XLSX.utils.book_append_sheet(wb, wsAll, "พัสดุทั้งหมด");
+
+            const categories = [...new Set(state.inventory.map(x => x.category || 'ทั่วไป'))];
+            categories.forEach(cat => {
+                const catData = state.inventory
+                    .filter(x => (x.category || 'ทั่วไป') === cat)
+                    .map((x, index) => ({
+                        'ลำดับ': index + 1,
+                        'ชื่อวัสดุ/พัสดุ': x.name,
+                        'คงเหลือ': parseInt(x.stock) || 0,
+                        'หน่วยนับ': x.unit || 'ชิ้น',
+                        'ราคาต่อหน่วย (บาท)': parseFloat(x.price) || 0,
+                        'มูลค่ารวม (บาท)': (parseInt(x.stock) || 0) * (parseFloat(x.price) || 0),
+                        'เกณฑ์ขั้นต่ำ': parseInt(x.min) || 5
+                    }));
+                
+                const wsCat = XLSX.utils.json_to_sheet(catData);
+                formatAndStyleSheet(wsCat);
+                const sheetName = cat.substring(0, 31); 
+                XLSX.utils.book_append_sheet(wb, wsCat, sheetName);
+            });
+
+            const historyData = (state.history || []).map((h, index) => ({
+                'ลำดับ': index + 1,
+                'วัน-เวลา': h.timestamp ? new Date(h.timestamp).toLocaleString('th-TH') : '-',
+                'รายการพัสดุ': h.item,
+                'ประเภทกิจกรรม': h.action_text || (h.type === 'in' ? 'รับเข้า' : h.type === 'out' ? 'เบิกออก' : h.type === 'create' ? 'เพิ่มใหม่' : h.type === 'delete' ? 'ลบวัสดุ' : 'แก้ไข'),
+                'จำนวน': h.amount || 0,
+                'ราคาต่อหน่วย': h.price || 0,
+                'ราคารวม': (h.amount || 0) * (h.price || 0),
+                'ผู้ทำรายการ': h.user || 'ไม่ระบุ',
+                'หมายเหตุ': h.remark || '-'
+            }));
+            const wsHistory = XLSX.utils.json_to_sheet(historyData);
+            formatAndStyleSheet(wsHistory);
+            XLSX.utils.book_append_sheet(wb, wsHistory, "ประวัติการทำรายการ");
+
+            XLSX.writeFile(wb, `รายงานวัสดุ_${state.currentOrg}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        },
+
+            removeCatClick: async (cat) => {
+                if(cat === 'ทั่วไป') return;
+                
+                state.history.unshift({ 
+                    item: `หมวดหมู่: ${cat}`, 
+                    type: 'edit', 
+                    action_text: 'ลบหมวดหมู่', 
+                    amount: 0, 
+                    price: 0, 
+                    user: state.currentUser, 
+                    timestamp: new Date().toISOString(), 
+                    remark: `ลบหมวดหมู่ออกถาวร (วัสดุเดิมถูกย้ายไปที่ 'ทั่วไป')` 
+                });
+
+                state.categories = state.categories.filter(c => c !== cat);
+                state.inventory.forEach(i => { if(i.category === cat) i.category = 'ทั่วไป'; });
+                
+                await persist();
+            },
+        forgotPassword: forgotPassword,
+
+currentDashScope: 'day',
+qtyChartInstance: null,
+priceChartInstance: null,
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+
+openDashboardModal() {
+    const modal = document.getElementById('dashboardModal');
+    if (modal) modal.classList.remove('hidden');
+
+    // แสดง Dashboard ตาม Scope ล่าสุดเพียงครั้งเดียว
+    this.setDashboardScope(this.currentDashScope || 'day');
+},
+
+// ------------------------------------------------------------
+// เปลี่ยนช่วงเวลา Dashboard
+// day   = วันนี้
+// month = เดือนนี้
+// year  = ปีนี้
+// ------------------------------------------------------------
+setDashboardScope(scope) {
+    this.currentDashScope = scope;
+
+    ['Day', 'Month', 'Year'].forEach(s => {
+        const btn = document.getElementById(`btnScope${s}`);
+
+        if (btn) {
+            if (s.toLowerCase() === scope) {
+                btn.className =
+                    "flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-sm";
+            } else {
+                btn.className =
+                    "flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all bg-white text-gray-600 hover:bg-gray-100";
+            }
+        }
+    });
+
+    this.updateDashboardData(scope);
+},
+
+// ------------------------------------------------------------
+// ตรวจสอบว่า History อยู่ในช่วงเวลาที่เลือกหรือไม่
+// ------------------------------------------------------------
+isHistoryInScope(timestamp, scope, now = new Date()) {
+    if (!timestamp) return false;
+
+    const hDate = new Date(timestamp);
+
+    if (isNaN(hDate.getTime())) return false;
+
+    if (scope === 'day') {
+        // วันนี้จริง ๆ
+        return hDate.toDateString() === now.toDateString();
+    }
+
+    if (scope === 'month') {
+        return (
+            hDate.getMonth() === now.getMonth() &&
+            hDate.getFullYear() === now.getFullYear()
+        );
+    }
+
+    if (scope === 'year') {
+        return hDate.getFullYear() === now.getFullYear();
+    }
+
+    return true;
+},
+
+// ------------------------------------------------------------
+// ดึง History เฉพาะช่วงเวลาที่เลือก
+// ------------------------------------------------------------
+getDashboardHistory(scope) {
+    const now = new Date();
+
+    return (state.history || []).filter(h => {
+        return this.isHistoryInScope(h.timestamp, scope, now);
+    });
+},
+
+// ------------------------------------------------------------
+// หา Category ของวัสดุ
+//
+// History รุ่นเก่าของระบบอาจไม่มี category
+// จึงค้นจาก state.inventory ด้วยชื่อวัสดุ
+// ------------------------------------------------------------
+getHistoryCategory(historyItem) {
+    if (historyItem.category) {
+        return historyItem.category;
+    }
+
+    const itemName = String(historyItem.item || '')
+        .trim()
+        .toLowerCase();
+
+    const inventoryItem = (state.inventory || []).find(i =>
+        String(i.name || '').trim().toLowerCase() === itemName
+    );
+
+    return inventoryItem?.category || 'ทั่วไป';
+},
+
+// ------------------------------------------------------------
+// UPDATE DASHBOARD
+// ------------------------------------------------------------
+updateDashboardData(scope) {
+
+    const filteredHistory = this.getDashboardHistory(scope);
+
+    // --------------------------------------------------------
+    // เฉพาะการเคลื่อนไหวจริง
+    // in  = รับเข้า
+    // out = เบิกออก
+    //
+    // create / edit / delete / category ไม่ถูกนำมาคำนวณ
+    // --------------------------------------------------------
+    const movementHistory = filteredHistory.filter(h => {
+        const type = String(h.type || '').toLowerCase();
+
+        return type === 'in' || type === 'out';
+    });
+
+    let totalInQty = 0;
+    let totalOutQty = 0;
+
+    let totalInValue = 0;
+    let totalOutValue = 0;
+
+    // --------------------------------------------------------
+    // สรุปตามหมวดหมู่
+    // --------------------------------------------------------
+    const categoryMap = {};
+
+    movementHistory.forEach(h => {
+
+        const type = String(h.type || '').toLowerCase();
+
+        const qty = Number(h.amount || 0);
+        const price = Number(h.price || 0);
+        const value = qty * price;
+
+        const category = this.getHistoryCategory(h);
+
+        if (!categoryMap[category]) {
+            categoryMap[category] = {
+                inQty: 0,
+                outQty: 0,
+                netQty: 0,
+                inValue: 0,
+                outValue: 0,
+                netValue: 0
+            };
+        }
+
+        if (type === 'in') {
+
+            totalInQty += qty;
+            totalInValue += value;
+
+            categoryMap[category].inQty += qty;
+            categoryMap[category].inValue += value;
+
+        } else if (type === 'out') {
+
+            totalOutQty += qty;
+            totalOutValue += value;
+
+            categoryMap[category].outQty += qty;
+            categoryMap[category].outValue += value;
+        }
+    });
+
+    // --------------------------------------------------------
+    // คำนวณสุทธิ
+    // --------------------------------------------------------
+    const netQty = totalInQty - totalOutQty;
+    const netValue = totalInValue - totalOutValue;
+
+    Object.keys(categoryMap).forEach(category => {
+
+        categoryMap[category].netQty =
+            categoryMap[category].inQty -
+            categoryMap[category].outQty;
+
+        categoryMap[category].netValue =
+            categoryMap[category].inValue -
+            categoryMap[category].outValue;
+    });
+
+    // --------------------------------------------------------
+    // CARD 1
+    // จำนวนสุทธิ
+    // --------------------------------------------------------
+    const qtyElem = document.getElementById('dashTotalQty');
+
+    if (qtyElem) {
+        const sign = netQty > 0 ? '+' : '';
+
+        qtyElem.innerText =
+            `${sign}${netQty.toLocaleString('th-TH')} ชิ้น`;
+    }
+
+    // --------------------------------------------------------
+    // CARD 2
+    // มูลค่าสุทธิ
+    // --------------------------------------------------------
+    const priceElem = document.getElementById('dashTotalPrice');
+
+    if (priceElem) {
+
+        const sign = netValue > 0 ? '+' : '';
+
+        priceElem.innerText =
+            `${sign}${netValue.toLocaleString('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })} บาท`;
+    }
+
+    // --------------------------------------------------------
+    // ปรับหัวข้อ Card ให้ตรงกับข้อมูลจริง
+    // โดยไม่ต้องแก้ HTML
+    // --------------------------------------------------------
+    const cardLabels = document.querySelectorAll(
+        '#dashboardModal .uppercase.tracking-wider'
+    );
+
+    if (cardLabels.length >= 2) {
+
+        cardLabels[0].innerText =
+            'จำนวนสุทธิ (รับเข้า - เบิกออก)';
+
+        cardLabels[1].innerText =
+            'มูลค่าสุทธิ (รับเข้า - เบิกออก)';
+    }
+
+    // --------------------------------------------------------
+    // เตรียมข้อมูลกราฟ
+    // --------------------------------------------------------
+    const categories = Object.keys(categoryMap).sort((a, b) =>
+        a.localeCompare(b, 'th')
+    );
+
+    const labels = categories;
+
+    // กราฟจำนวน
+    const qtyData = categories.map(category =>
+        categoryMap[category].netQty
+    );
+
+    // กราฟมูลค่า
+    const priceData = categories.map(category =>
+        categoryMap[category].netValue
+    );
+
+    // --------------------------------------------------------
+    // แก้หัวข้อกราฟเดิมให้ตรงกับข้อมูล
+    // --------------------------------------------------------
+    const chartTitles = document.querySelectorAll(
+        '#dashboardModal h5'
+    );
+
+    if (chartTitles.length >= 2) {
+
+        chartTitles[0].innerText =
+            'กราฟจำนวนสุทธิ (รับเข้า - เบิกออก) แยกตามหมวดหมู่';
+
+        chartTitles[1].innerText =
+            'กราฟมูลค่าสุทธิ (รับเข้า - เบิกออก) แยกตามหมวดหมู่';
+    }
+
+    // --------------------------------------------------------
+    // Render Charts
+    // --------------------------------------------------------
+    this.renderCharts(
+        labels,
+        qtyData,
+        priceData
+    );
+
+    // --------------------------------------------------------
+    // Render ตารางวัสดุคงเหลือปัจจุบัน
+    // ตารางนี้ใช้ inventory ไม่ใช้ history
+    // --------------------------------------------------------
+    this.renderDashboardInventoryTable();
+},
+
+// ============================================================
+// ตาราง Dashboard : วัสดุคงเหลือปัจจุบัน
+// ============================================================
+
+renderDashboardInventoryTable() {
+
+    const tbody = document.getElementById('dashTableBody');
+    const countElem = document.getElementById('dashItemCount');
+
+    if (!tbody) return;
+
+    const inventory = Array.isArray(state.inventory)
+        ? state.inventory
+        : [];
+
+    // จำนวนรายการ
+    if (countElem) {
+        countElem.innerText =
+            `${inventory.length.toLocaleString('th-TH')} รายการ`;
+    }
+
+    if (inventory.length === 0) {
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6"
+                    class="px-4 py-8 text-center text-slate-400">
+                    ไม่พบข้อมูลวัสดุในคลัง
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    let totalInventoryValue = 0;
+
+    tbody.innerHTML = inventory.map((item, index) => {
+
+        const stock = Number(item.stock || 0);
+        const price = Number(item.price || 0);
+
+        const totalValue = stock * price;
+
+        totalInventoryValue += totalValue;
+
+        const stockClass =
+            stock <= 0
+                ? 'text-rose-600'
+                : stock <= Number(item.min || 5)
+                    ? 'text-amber-500'
+                    : 'text-slate-700';
+
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+
+                <td class="px-4 py-3">
+                    ${index + 1}
+                </td>
+
+                <td class="px-4 py-3 font-bold text-slate-800">
+                    ${this.escapeDashboardHtml(item.name || '-')}
+                </td>
+
+                <td class="px-4 py-3">
+                    ${this.escapeDashboardHtml(
+                        item.category || 'ทั่วไป'
+                    )}
+                </td>
+
+                <td class="px-4 py-3 text-right font-black ${stockClass}">
+                    ${stock.toLocaleString('th-TH')}
+                    <span class="text-slate-400 font-medium">
+                        ${this.escapeDashboardHtml(item.unit || 'ชิ้น')}
+                    </span>
+                </td>
+
+                <td class="px-4 py-3 text-right">
+                    ${price.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}
+                </td>
+
+                <td class="px-4 py-3 text-right font-black text-indigo-600">
+                    ${totalValue.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}
+                </td>
+
+            </tr>
+        `;
+
+    }).join('');
+
+    // --------------------------------------------------------
+    // ถ้าต้องการ สามารถนำ totalInventoryValue ไปใช้งานต่อได้
+    // แต่ไม่เอามาแทน "มูลค่าสุทธิ" ของช่วงเวลาที่เลือก
+    // --------------------------------------------------------
+},
+
+// ============================================================
+// ป้องกัน HTML Injection ในข้อมูลชื่อวัสดุ/หมวดหมู่
+// ============================================================
+
+escapeDashboardHtml(value) {
+
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+},
+
+// ============================================================
+// CHARTS
+// ============================================================
+
+renderCharts(labels, qtyData, priceData) {
+
+    const ctxQtyEl = document.getElementById('qtyChart');
+    const ctxPriceEl = document.getElementById('priceChart');
+
+    if (!ctxQtyEl || !ctxPriceEl) return;
+
+    const ctxQty = ctxQtyEl.getContext('2d');
+    const ctxPrice = ctxPriceEl.getContext('2d');
+
+    // ลบ Chart ตัวเก่าก่อนสร้างใหม่
+    if (this.qtyChartInstance) {
+        this.qtyChartInstance.destroy();
+        this.qtyChartInstance = null;
+    }
+
+    if (this.priceChartInstance) {
+        this.priceChartInstance.destroy();
+        this.priceChartInstance = null;
+    }
+
+    // --------------------------------------------------------
+    // กราฟจำนวน
+    // --------------------------------------------------------
+
+    this.qtyChartInstance = new Chart(ctxQty, {
+
+        type: 'bar',
+
+        data: {
+
+            labels: labels.length
+                ? labels
+                : ['ไม่มีข้อมูล'],
+
+            datasets: [{
+                label: 'จำนวนสุทธิ (ชิ้น)',
+
+                data: qtyData.length
+                    ? qtyData
+                    : [0],
+
+                backgroundColor: 'rgba(79, 70, 229, 0.7)',
+
+                borderColor: 'rgba(79, 70, 229, 1)',
+
+                borderWidth: 1,
+
+                borderRadius: 4
+            }]
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    display: true
+                },
+
+                tooltip: {
+
+                    callbacks: {
+
+                        label: function(context) {
+
+                            const value =
+                                Number(context.raw || 0);
+
+                            const sign =
+                                value > 0 ? '+' : '';
+
+                            return ` ${sign}${value.toLocaleString('th-TH')} ชิ้น`;
+                        }
+                    }
+                }
+            },
+
+            scales: {
+
+                y: {
+
+                    beginAtZero: true,
+
+                    ticks: {
+
+                        callback: function(value) {
+                            return Number(value)
+                                .toLocaleString('th-TH');
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // --------------------------------------------------------
+    // กราฟมูลค่า
+    // --------------------------------------------------------
+
+    this.priceChartInstance = new Chart(ctxPrice, {
+
+        type: 'bar',
+
+        data: {
+
+            labels: labels.length
+                ? labels
+                : ['ไม่มีข้อมูล'],
+
+            datasets: [{
+
+                label: 'มูลค่าสุทธิ (บาท)',
+
+                data: priceData.length
+                    ? priceData
+                    : [0],
+
+                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+
+                borderColor: 'rgba(16, 185, 129, 1)',
+
+                borderWidth: 1,
+
+                borderRadius: 4
+            }]
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    display: true
+                },
+
+                tooltip: {
+
+                    callbacks: {
+
+                        label: function(context) {
+
+                            const value =
+                                Number(context.raw || 0);
+
+                            const sign =
+                                value > 0 ? '+' : '';
+
+                            return ` ${sign}${value.toLocaleString('th-TH', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            })} บาท`;
+                        }
+                    }
+                }
+            },
+
+            scales: {
+
+                y: {
+
+                    beginAtZero: true,
+
+                    ticks: {
+
+                        callback: function(value) {
+
+                            return Number(value)
+                                .toLocaleString('th-TH');
+                        }
+                    }
+                }
+            }
+        }
+    });
+},
+
+// ============================================================
+// EXPORT : รับเข้า
+// ============================================================
+
+exportReceiveExcel() {
+
+    try {
+
+        const now = new Date();
+        const scope = this.currentDashScope || 'day';
+
+        const filteredHistory =
+            (state.history || [])
+                .filter(h =>
+                    this.isHistoryInScope(h.timestamp, scope, now)
+                )
+                .filter(h => {
+
+                    const type =
+                        String(h.type || '').toLowerCase();
+
+                    return type === 'in';
+                });
+
+        if (filteredHistory.length === 0) {
+
+            alert(
+                'ไม่มีข้อมูลรายการ "รับเข้า" ในช่วงเวลานี้'
+            );
+
+            return;
+        }
+
+        const workbook = XLSX.utils.book_new();
+
+        const groupedByMonth = {};
+
+        filteredHistory.forEach(h => {
+
+            const hDate = new Date(h.timestamp);
+
+            const year = hDate.getFullYear();
+
+            const month =
+                String(hDate.getMonth() + 1).padStart(2, '0');
+
+            const monthKey =
+                `${year}-${month}`;
+
+            if (!groupedByMonth[monthKey]) {
+                groupedByMonth[monthKey] = [];
+            }
+
+            groupedByMonth[monthKey].push(h);
+        });
+
+        const thaiMonths = [
+            'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
+            'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
+            'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+        ];
+
+        Object.keys(groupedByMonth)
+            .sort()
+            .forEach(monthKey => {
+
+                const monthData =
+                    groupedByMonth[monthKey];
+
+                const excelRows =
+                    monthData.map((h, index) => {
+
+                        const qty =
+                            Number(h.amount || 0);
+
+                        const pricePerUnit =
+                            Number(h.price || 0);
+
+                        return {
+
+                            'ลำดับ':
+                                index + 1,
+
+                            'วันที่/เวลา':
+                                h.timestamp
+                                    ? new Date(h.timestamp)
+                                        .toLocaleString('th-TH')
+                                    : '',
+
+                            'รายการพัสดุ':
+                                h.item || '-',
+
+                            'ประเภทกิจกรรม':
+                                'รับเข้า',
+
+                            'จำนวน':
+                                qty,
+
+                            'ราคาต่อหน่วย (บาท)':
+                                pricePerUnit,
+
+                            'มูลค่ารวม (บาท)':
+                                qty * pricePerUnit,
+
+                            'ผู้ดำเนินการ':
+                                h.user || '-',
+
+                            'หมายเหตุ':
+                                h.remark || '-'
+                        };
+                    });
+
+                const worksheet =
+                    XLSX.utils.json_to_sheet(excelRows);
+
+                worksheet['!cols'] = [
+                    { wch: 8 },
+                    { wch: 20 },
+                    { wch: 30 },
+                    { wch: 15 },
+                    { wch: 10 },
+                    { wch: 18 },
+                    { wch: 18 },
+                    { wch: 20 },
+                    { wch: 35 }
+                ];
+
+                const [y, m] =
+                    monthKey.split('-');
+
+                const sheetName =
+                    `${thaiMonths[parseInt(m) - 1]} ${parseInt(y) + 543}`;
+
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    worksheet,
+                    sheetName
+                );
+            });
+
+        XLSX.writeFile(
+            workbook,
+            `Stock_รับเข้า_${scope}_${new Date()
+                .toISOString()
+                .split('T')[0]}.xlsx`
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Error in exportReceiveExcel:',
+            error
+        );
+
+        alert(
+            'เกิดข้อผิดพลาดในการส่งออกรายงานรับเข้า: ' +
+            error.message
+        );
+    }
+},
+
+// ============================================================
+// EXPORT : เบิกออก
+// ============================================================
+
+exportWithdrawExcel() {
+
+    try {
+
+        const now = new Date();
+        const scope = this.currentDashScope || 'day';
+
+        const filteredHistory =
+            (state.history || [])
+                .filter(h =>
+                    this.isHistoryInScope(h.timestamp, scope, now)
+                )
+                .filter(h => {
+
+                    const type =
+                        String(h.type || '').toLowerCase();
+
+                    return type === 'out';
+                });
+
+        if (filteredHistory.length === 0) {
+
+            alert(
+                'ไม่มีข้อมูลรายการ "เบิกออก" ในช่วงเวลานี้'
+            );
+
+            return;
+        }
+
+        const workbook = XLSX.utils.book_new();
+
+        const groupedByMonth = {};
+
+        filteredHistory.forEach(h => {
+
+            const hDate = new Date(h.timestamp);
+
+            const year =
+                hDate.getFullYear();
+
+            const month =
+                String(hDate.getMonth() + 1).padStart(2, '0');
+
+            const monthKey =
+                `${year}-${month}`;
+
+            if (!groupedByMonth[monthKey]) {
+                groupedByMonth[monthKey] = [];
+            }
+
+            groupedByMonth[monthKey].push(h);
+        });
+
+        const thaiMonths = [
+            'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
+            'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
+            'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+        ];
+
+        Object.keys(groupedByMonth)
+            .sort()
+            .forEach(monthKey => {
+
+                const monthData =
+                    groupedByMonth[monthKey];
+
+                const excelRows =
+                    monthData.map((h, index) => {
+
+                        const qty =
+                            Number(h.amount || 0);
+
+                        const pricePerUnit =
+                            Number(h.price || 0);
+
+                        return {
+
+                            'ลำดับ':
+                                index + 1,
+
+                            'วันที่/เวลา':
+                                h.timestamp
+                                    ? new Date(h.timestamp)
+                                        .toLocaleString('th-TH')
+                                    : '',
+
+                            'รายการพัสดุ':
+                                h.item || '-',
+
+                            'ประเภทกิจกรรม':
+                                'เบิกออก',
+
+                            'จำนวน':
+                                qty,
+
+                            'ราคาต่อหน่วย (บาท)':
+                                pricePerUnit,
+
+                            'มูลค่ารวม (บาท)':
+                                qty * pricePerUnit,
+
+                            'ผู้ดำเนินการ':
+                                h.user || '-',
+
+                            'หมายเหตุ':
+                                h.remark || '-'
+                        };
+                    });
+
+                const worksheet =
+                    XLSX.utils.json_to_sheet(excelRows);
+
+                worksheet['!cols'] = [
+                    { wch: 8 },
+                    { wch: 20 },
+                    { wch: 30 },
+                    { wch: 15 },
+                    { wch: 10 },
+                    { wch: 18 },
+                    { wch: 18 },
+                    { wch: 20 },
+                    { wch: 35 }
+                ];
+
+                const [y, m] =
+                    monthKey.split('-');
+
+                const sheetName =
+                    `${thaiMonths[parseInt(m) - 1]} ${parseInt(y) + 543}`;
+
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    worksheet,
+                    sheetName
+                );
+            });
+
+        XLSX.writeFile(
+            workbook,
+            `Stock_เบิกออก_${scope}_${new Date()
+                .toISOString()
+                .split('T')[0]}.xlsx`
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Error in exportWithdrawExcel:',
+            error
+        );
+
+        alert(
+            'เกิดข้อผิดพลาดในการส่งออกรายงานเบิกออก: ' +
+            error.message
+        );
+    }
+}            
+        };
+    })();
+
+    window.AppStore = store;
+    document.addEventListener('DOMContentLoaded', store.init);
+</script>
+</body>
+</html>
